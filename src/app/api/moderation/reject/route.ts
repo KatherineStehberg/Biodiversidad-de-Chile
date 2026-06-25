@@ -1,0 +1,65 @@
+import { NextRequest, NextResponse } from 'next/server'
+import dbConnect from '@/lib/db'
+import { sendAuthorNotification } from '@/lib/email'
+
+interface AuthorUser {
+  email?: string
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { type, id, secret, reason } = body
+    if (!process.env.MODERATION_SECRET || secret !== process.env.MODERATION_SECRET) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!type || !id) return NextResponse.json({ error: 'Missing params' }, { status: 400 })
+
+    const supabase = await dbConnect()
+
+    if (!['product', 'offer', 'consultant'].includes(type)) {
+      return NextResponse.json({ error: 'Unknown type' }, { status: 400 })
+    }
+
+    let authorId: string | null = null
+    if (type === 'product') {
+      const sel = await supabase.from('products').select('seller_id').eq('id', id).single()
+      if (sel.error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      authorId = sel.data?.seller_id ? String(sel.data.seller_id) : null
+      const del = await supabase.from('products').delete().eq('id', id)
+      if (del.error) return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    } else if (type === 'offer') {
+      const sel = await supabase.from('offers').select('author').eq('id', id).single()
+      if (sel.error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      authorId = sel.data?.author ? String(sel.data.author) : null
+      const del = await supabase.from('offers').delete().eq('id', id)
+      if (del.error) return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    } else if (type === 'consultant') {
+      const sel = await supabase.from('consultores').select('usuario_id').eq('id', id).single()
+      if (sel.error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      authorId = sel.data?.usuario_id ? String(sel.data.usuario_id) : null
+      const del = await supabase.from('consultores').delete().eq('id', id)
+      if (del.error) return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    }
+
+    // notify author if possible
+    let authorEmail: string | null = null
+    if (authorId) {
+      if (type === 'product' || type === 'offer' || type === 'consultant') {
+        const user = await supabase.from('usuarios').select('email').eq('id', String(authorId)).single()
+        const userData = user.data as AuthorUser
+        authorEmail = userData?.email || null
+      }
+    }
+
+    if (authorEmail) {
+      await sendAuthorNotification({ to: authorEmail, subject: 'Tu publicación fue rechazada', text: `Tu ${type} fue rechazada. Razón: ${reason || 'No especificada'}` })
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[api/moderation/reject] error', err)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}

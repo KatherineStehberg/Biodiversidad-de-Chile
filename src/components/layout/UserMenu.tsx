@@ -1,0 +1,179 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { HiChevronDown } from 'react-icons/hi';
+import { useRouter } from 'next/navigation';
+import UserAvatar from '../ui/UserAvatar';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { Session } from '@supabase/supabase-js';
+
+interface UserIdentity {
+  identity_data?: {
+    name?: string
+    full_name?: string
+    avatar_url?: string
+    picture?: string
+  }
+}
+
+export default function UserMenu() {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      setSession(data.session);
+      setLoading(false);
+
+      // Si hay sesión, cargar imagen_perfil desde usuarios
+      if (data.session?.user?.id) {
+        const { data: userData } = await supabase
+          .from('usuarios')
+          .select('imagen_perfil')
+          .eq('id', data.session.user.id)
+          .single();
+        if (userData?.imagen_perfil && active) {
+          setCustomAvatar(userData.imagen_perfil);
+        }
+      }
+    })();
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      // Limpiar avatar al cerrar sesión
+      if (!newSession) setCustomAvatar(null);
+    });
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  // Cierra al hacer click fuera
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    window.addEventListener('click', onClick);
+    return () => window.removeEventListener('click', onClick);
+  }, []);
+
+  if (loading) return null;
+
+  const activeSession = session;
+
+  // Sin sesión → botón que navega a /login
+  if (!activeSession) {
+    return (
+      <button
+        onClick={() => router.push('/login')}
+        className="bg-amber-100 text-neutral-800 px-4 py-1 rounded-md font-semibold text-sm hover:opacity-90 transition"
+      >
+        Ingresar
+      </button>
+    );
+  }
+
+  const meta = activeSession.user?.user_metadata || {};
+  const identities = (activeSession.user?.identities as unknown as UserIdentity[]) || [];
+  const identity = identities.length > 0 ? identities[0].identity_data || {} : {};
+  
+  const name =
+    meta.name ||
+    meta.full_name ||
+    identity.name ||
+    identity.full_name ||
+    activeSession.user?.email?.split('@')[0] ||
+    'Usuario';
+  const image =
+    customAvatar || // ← prioridad: imagen subida por el usuario
+    meta.avatar_url ||
+    meta.picture ||
+    identity.avatar_url ||
+    identity.picture ||
+    null;
+
+  // Función para cerrar sesión
+  const handleSignOut = () => {
+    supabase.auth.signOut().finally(() => {
+      router.push('/');
+      router.refresh();
+      setSession(null);
+    });
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 rounded-full pl-1 pr-2 py-1 hover:bg-white/5 transition"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <UserAvatar src={image} name={name} size={36} />
+        <span className="hidden sm:block text-sm">{name}</span>
+        <HiChevronDown className="size-4 opacity-70" />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 bg-neutral-900/95 backdrop-blur p-2 shadow-2xl z-[60]"
+        >
+          <div className="flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-white/5">
+            <UserAvatar src={image} name={name} size={44} />
+            <div className="min-w-0">
+              <div className="font-semibold truncate">{name}</div>
+              <div className="text-xs text-white/60 truncate">
+                Colaborador
+              </div>
+            </div>
+          </div>
+
+          <div className="my-2 h-px bg-white/10" />
+
+          <MenuItem href="/dashboard" label="Mi panel" />
+          <MenuItem href="/perfil" label="Editar perfil" />
+          <MenuItem href="/mis-publicaciones" label="Mis publicaciones" />
+          <MenuItem href="/membresias" label="Mi membresía" />
+
+          <div className="my-2 h-px bg-white/10" />
+
+          <button
+            onClick={handleSignOut}
+            className="mt-3 w-full rounded-lg px-4 py-2
+                       bg-neutral-800 hover:bg-neutral-700
+                       text-white font-semibold
+                       border border-white/10 transition"
+          >
+            Cerrar sesión
+          </button>
+
+          <div className="mt-2 px-3 pb-1 text-[10px] leading-4 text-white/50">
+            Privacidad · Condiciones · Publicidad · Más
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="block px-3 py-2 rounded-lg hover:bg-white/5 text-sm"
+      onClick={(e) => {
+        if (href === '#') e.preventDefault(); // solo visual por ahora
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
