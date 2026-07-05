@@ -103,11 +103,9 @@ servidor de desarrollo estaba en proceso de compilar la primera ruta (JIT)
 cuando el test 1 inició. Los tests 2, 3 y 4 corrieron después de que test 1
 agotó su timeout (~35 s), momento en que la compilación ya había completado.
 
-Este comportamiento está documentado como riesgo conocido en
-`docs/qa/02-estabilizacion-del-proyecto.md`: la primera compilación JIT
-de Next.js puede causar fallos de timing en Cypress. La mejora propuesta
-(`beforeEach` con visita de calentamiento o mayor tiempo de espera) se
-abordará en el módulo 5.
+Este comportamiento es un fallo de infraestructura, no un defecto del test.
+La ruta `/` no estaba precompilada cuando Cypress inició. El Módulo 5 evaluará
+estrategias para gestionar la compilación JIT en entornos de desarrollo.
 
 ### `api-usuarios.cy.js` — test no ejecutado ⚠️
 
@@ -116,6 +114,46 @@ Cypress reportaba inicialmente "no spec files were found".
 La inspección posterior del código confirmó que el endpoint
 `/api/usuarios` no existe en el proyecto, por lo que el archivo
 no es aplicable al estado actual y está pendiente de reemplazo.
+
+### Ejecución controlada con calentamiento previo — 2026-07-05
+
+**Hipótesis:** el test 1 fallaba porque `cy.visit()` llegó durante la
+compilación JIT de la ruta `/`. Una solicitud HTTP previa al servidor antes
+de iniciar Cypress obligaría a Next.js a compilar la ruta, y el test 1
+debería pasar sin modificar el código.
+
+**Condiciones de la prueba controlada:**
+- Servidor iniciado con `npm run dev`, se esperó respuesta HTTP 200
+- Solicitud de calentamiento: `Invoke-WebRequest http://localhost:3000/`
+  confirmó HTTP 200 y 161 967 bytes recibidos — ruta `/` compilada
+- Workaround QA-005 aplicado mediante API .NET:
+  ```powershell
+  [System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+  ```
+- Sin cambios en `home.cy.js`, `cypress.config.ts` ni timeouts
+
+**Resultados:**
+
+| # | Descripción | Resultado | Duración |
+|---|---|---|---|
+| 1 | Debe cargar correctamente | ✅ Passed | 5 686 ms |
+| 2 | Debe validar la URL | ✅ Passed | 7 037 ms |
+| 3 | Debe verificar que la página tenga un título | ✅ Passed | 3 810 ms |
+| 4 | Debe tomar una captura de la página principal | ✅ Passed | 14 449 ms |
+
+**Resumen:** 4 passing, 0 failing — duración total 31 segundos.
+
+**Conclusión confirmada:**
+Next.js en modo desarrollo compila cada ruta bajo demanda (JIT). El primer
+`cy.visit('http://localhost:3000')` del test 1 llegó mientras el servidor
+aún compilaba la ruta `/`. El socket no recibió respuesta dentro del tiempo
+de espera y se agotó. Los tests 2, 3 y 4 pasaron porque llegaron cuando la
+compilación ya había finalizado.
+
+La causa raíz era un problema de secuencia de inicio del entorno, no un
+defecto del test. Resolverlo no requirió modificar `home.cy.js` ni aumentar
+timeouts. El Módulo 5 evaluará cómo incorporar esta garantía dentro de la
+secuencia de ejecución.
 
 ## Evidencias
 
@@ -129,15 +167,10 @@ no es aplicable al estado actual y está pendiente de reemplazo.
 Ruta: `cypress/screenshots/home.cy.js/`
 
 ### Estado de versionado
-`cypress/screenshots/` **no está en `.gitignore`**. La carpeta aparece
-como `Untracked files` en `git status`, lo que significa que Git la ve
-pero no la rastrea. Si se ejecuta `git add .`, los screenshots se
-incluirían en el commit.
-
-Pendiente de aprobación: agregar `cypress/screenshots/` a `.gitignore`
-para excluir las capturas generadas automáticamente. Los screenshots se
-gestionarán como artefactos de CI en el módulo 10, no como archivos
-versionados.
+`cypress/screenshots/` **está en `.gitignore`** desde el commit `a4e26e1`
+(`chore(git): ignorar artefactos generados por Cypress`). Las capturas
+generadas localmente no se incluyen en commits. Los screenshots se
+gestionarán como artefactos de CI en el módulo 10.
 
 ## Errores encontrados
 - Cypress reportaba "no spec files were found" antes de corregir la

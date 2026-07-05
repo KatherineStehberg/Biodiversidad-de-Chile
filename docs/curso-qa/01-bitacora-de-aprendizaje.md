@@ -232,4 +232,96 @@ los tests 2, 3 y 4 llamaron cuando el servidor ya estaba listo.
 
 ---
 
+## Sesión 4 — Diagnóstico del test 1: ESOCKETTIMEDOUT y compilación JIT
+
+**Fecha:** 2026-07-05
+
+**¿Qué aprendimos?**
+Que antes de modificar un test que falla, hay que reproducir y confirmar la
+causa exacta del fallo. El test 1 de `home.cy.js` fallaba con `ESOCKETTIMEDOUT`,
+no por un error en el código del test, sino porque el entorno no estaba en el
+estado esperado cuando Cypress inició la ejecución.
+
+**Hipótesis planteada**
+La ejecución anterior mostró un patrón incoherente: el test 1 fallaba (~35 s)
+y los tests 2, 3 y 4 pasaban, aunque los cuatro hacen exactamente lo mismo
+(`cy.visit('http://localhost:3000')`). Si el servidor estuviera caído, todos
+fallarían. Si estuviera funcionando, todos pasarían.
+
+La explicación: Next.js en modo desarrollo compila cada ruta la primera vez
+que se accede a ella. El test 1 llegó mientras el servidor compilaba la ruta `/`.
+El test 1 agotó su tiempo de espera (~35 s); para cuando los tests 2, 3 y 4
+llegaron, la compilación ya había terminado y el servidor respondía normalmente.
+
+**Prueba controlada**
+En lugar de modificar el test, se repitió la ejecución con una sola diferencia:
+una solicitud HTTP previa al servidor antes de iniciar Cypress.
+
+1. Servidor iniciado con `npm run dev`, se esperó respuesta HTTP 200
+2. Esa solicitud forzó que Next.js compilara la ruta `/` (161 967 bytes recibidos)
+3. Cypress se ejecutó cuando la ruta ya estaba compilada
+
+**Resultado:** 4/4 tests aprobados en 31 segundos, sin ningún cambio en `home.cy.js`.
+
+| # | Resultado | Duración |
+|---|---|---|
+| 1 — Debe cargar correctamente | ✅ | 5 686 ms |
+| 2 — Debe validar la URL | ✅ | 7 037 ms |
+| 3 — Debe verificar que la página tenga un título | ✅ | 3 810 ms |
+| 4 — Debe tomar una captura de la página principal | ✅ | 14 449 ms |
+
+**Conceptos nuevos**
+
+- **JIT aplicado a Next.js dev:** el servidor de desarrollo compila cada ruta
+  la primera vez que recibe una solicitud para esa ruta. No precompila todas
+  las rutas al arrancar, sino bajo demanda. Primera visita = compilación +
+  respuesta; visitas siguientes = solo respuesta.
+- **Fallo de infraestructura vs. fallo del test:**
+  - *Fallo de test:* el código del test es incorrecto, o la aplicación no
+    cumple el comportamiento esperado.
+  - *Fallo de infraestructura:* el test es correcto, pero el servidor o algún
+    recurso del entorno no estaba disponible o listo cuando el test se ejecutó.
+  El test 1 no tenía ningún defecto. El problema era que el entorno no estaba
+  en el estado esperado.
+- **ESOCKETTIMEDOUT:** error de socket TCP. El cliente (Cypress) estableció
+  la conexión con el servidor, pero no recibió ningún byte de respuesta antes
+  de que se agotara el tiempo de espera. Diferente a:
+  - `ECONNREFUSED`: el servidor no acepta la conexión (puerto cerrado)
+  - `pageLoadTimeout` de Cypress: el servidor respondió pero la página tardó
+    en terminar de cargar
+
+**Principio aplicado**
+No se modificó el test antes de reproducir y confirmar la causa. Modificar
+un test cuya causa raíz no está confirmada puede enmascarar el problema real
+y crear una falsa sensación de que algo se "arregló".
+
+**Comandos utilizados**
+```powershell
+# Solicitud de calentamiento antes de iniciar Cypress
+Invoke-WebRequest -Uri "http://localhost:3000/" -TimeoutSec 60 -UseBasicParsing
+
+# Workaround QA-005 + ejecución en el mismo proceso
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/home.cy.js"
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Es como llegar a una tienda justo cuando el empleado está encendiendo las luces
+y acomodando los productos. La tienda existe, pero todavía no está lista para
+atender. Si llegás 30 segundos después, todo funciona normalmente. El problema
+no era que la tienda fuera defectuosa — era que llegaste antes de que estuviera
+lista para abrir.
+
+**Vocabulario técnico (inglés)**
+- *JIT* = Just-In-Time — compilación bajo demanda
+- *socket timeout* = tiempo de espera de conexión de red agotado sin respuesta
+- *infrastructure failure* = fallo de entorno, no del código en prueba
+- *warm-up request* = solicitud previa que fuerza la inicialización del servidor
+
+**Pendientes**
+- Formalizar secuencia de inicio reproducible en la documentación
+- Evaluar patrón `beforeEach` como alternativa dentro del spec (Módulo 5)
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
