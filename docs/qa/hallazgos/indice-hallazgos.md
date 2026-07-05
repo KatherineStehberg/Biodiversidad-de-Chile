@@ -6,3 +6,4 @@
 | QA-002 | TypeScript desactivado durante el build | Media | Media | Abierto | Fase: Estabilización / Módulo 10 — CI/CD |
 | QA-003 | ESLint desactivado durante el build | Baja | Baja | Abierto | Fase: Estabilización / Módulo 10 — CI/CD |
 | QA-004 | Archivo .env.example ausente | Baja | Baja | Abierto | Fase: Estabilización |
+| QA-005 | Verificación del binario de Cypress falla al ejecutar | Alta | Alta | Resuelto — workaround | Módulo 4 — Cypress básico |

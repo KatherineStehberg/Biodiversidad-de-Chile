@@ -126,4 +126,110 @@ el auto "funcione".
 
 ---
 
+## Sesión 3 — Módulo 4: análisis de home.cy.js y diagnóstico de Cypress
+
+**Fecha:** 2026-07-05
+
+**¿Qué aprendimos?**
+Que entender un archivo de tests línea por línea antes de ejecutarlo es una
+práctica de QA real, no solo pedagógica. También aprendimos que el entorno
+de ejecución puede tener problemas propios, independientes del código de los tests.
+Un test bien escrito puede no ejecutarse si la herramienta que lo corre
+tiene un problema de instalación.
+
+**Conceptos nuevos**
+- Suite: grupo de tests agrupados bajo `describe()`
+- Spec: el archivo completo de pruebas (`.cy.js`)
+- Test: un bloque `it()` individual
+- Assertion: el `.should()` que verifica un resultado
+- Command: cada `cy.algo()` que realiza una acción
+- Caché de Cypress: carpeta del sistema donde se almacena el binario Electron descargado
+- Binario de Cypress: ejecutable nativo que controla el navegador (separado del paquete npm)
+- `cypress verify`: comando que verifica que el binario puede iniciarse
+
+**Comandos utilizados**
+- `npx cypress version` — muestra versiones del paquete npm y del binario
+- `npx cypress cache path` — ruta de la caché del binario
+- `npx cypress cache list --size` — versiones instaladas en caché con su tamaño
+- `npx cypress verify` — verifica que el binario puede iniciar
+
+**Resultado obtenido**
+- Análisis completo de `cypress/e2e/home.cy.js`: 4 tests, estructura `describe` + `it`,
+  comandos `cy.visit`, `cy.url`, `cy.title`, `cy.get`, `cy.screenshot`
+- `npx cypress version`: paquete 15.17.0, binario 15.17.0, Electron 37.6.0 — versiones coinciden
+- `npx cypress verify`: FALLA — binario no acepta `--smoke-test` ni `--ping=N`
+
+**Errores encontrados**
+`npx cypress verify` falla con `bad option: --smoke-test` y `bad option: --ping=N`.
+Registrado como hallazgo QA-005 (en diagnóstico).
+
+**¿Cómo se interpretó?**
+Las versiones del paquete npm y del binario son idénticas, por lo que se
+descarta un mismatch de versiones. El error podría indicar un binario corrupto
+o una dependencia del sistema operativo faltante. El diagnóstico está en curso.
+
+**¿Cómo lo explicaría una persona principiante?**
+Cypress tiene dos partes: el código JavaScript (que dice qué probar) y el
+ejecutable que abre el navegador (el que realmente lo hace). Ese ejecutable
+está en una carpeta del sistema operativo, separada del proyecto. Si ese
+ejecutable tiene un problema, da igual que los tests estén perfectos —
+el auto no arranca aunque el GPS esté funcionando.
+
+**Vocabulario técnico (inglés)**
+- *binary* = binario, ejecutable nativo compilado para el sistema operativo
+- *cache* = caché, almacenamiento temporal en el sistema
+- *smoke test* = prueba de humo, verificación mínima de que algo puede arrancar
+- *verify* = verificar, confirmar que una instalación está operativa
+
+**Evidencia**
+- Salida exacta de `npx cypress version`, `npx cypress cache list --size`,
+  `npx cypress verify` documentada en `docs/qa/hallazgos/QA-005-cypress-verify-falla.md`
+
+**Resolución de QA-005**
+La causa raíz fue la variable de entorno `ELECTRON_RUN_AS_NODE=1`, heredada
+de VSCode (que también es una aplicación Electron). Cuando esta variable está
+activa, `Cypress.exe` arranca como proceso Node.js ordinario en lugar de como
+aplicación Electron, y rechaza los flags de verificación `--smoke-test` y
+`--ping=N` con "bad option".
+
+La variable NO es persistente en el sistema — reaparece en cada sesión
+porque la propaga el proceso padre (VSCode/Claude Code). El workaround es
+eliminarla en el mismo bloque de comandos que ejecuta Cypress:
+
+```powershell
+Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+npx cypress verify   # → √ Verified Cypress!
+```
+
+**Ejecución de home.cy.js — resultado real**
+Se ejecutaron los 4 tests con el workaround de QA-005 aplicado.
+
+| Test | Resultado |
+|---|---|
+| Debe cargar correctamente | ❌ FAILED — ESOCKETTIMEDOUT |
+| Debe validar la URL | ✅ Passed |
+| Debe verificar que la página tenga un título | ✅ Passed |
+| Debe tomar una captura de la página principal | ✅ Passed |
+
+El test 1 falló por timing: Next.js compiló la primera ruta justo cuando
+Cypress intentaba conectarse, y el socket agotó su tiempo de espera antes
+de recibir respuesta. Los tests 2, 3 y 4 corrieron cuando el servidor ya
+estaba completamente listo.
+
+Se generaron 2 screenshots: `pagina-principal.png` (test exitoso) y una
+captura automática del fallo del test 1.
+
+**¿Cómo lo explicaría una persona principiante?**
+Es como llamar a alguien por teléfono justo cuando está conectando la línea.
+La llamada no entra aunque el teléfono ya esté encendido. Si llamas 30
+segundos después, responde sin problemas. El test 1 llamó demasiado pronto;
+los tests 2, 3 y 4 llamaron cuando el servidor ya estaba listo.
+
+**Pendientes**
+- Resolver el timing del test 1 (beforeEach con visita de calentamiento — Módulo 5)
+- Reemplazar `api-usuarios.cy.js` por prueba de endpoint real (Módulo 4 continuación)
+- Hacer commit de la documentación de esta sesión
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*

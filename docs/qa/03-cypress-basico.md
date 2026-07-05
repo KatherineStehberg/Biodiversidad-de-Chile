@@ -60,14 +60,54 @@ npx cypress run
 
 ## Resultado obtenido
 
-### `home.cy.js` — 4 tests aprobados ✅
+### Ejecución anterior — resultado local previo a esta documentación
+Los 4 tests de `home.cy.js` habían sido ejecutados localmente por la
+desarrolladora con resultado aprobado. Esa ejecución no fue reproducida
+durante la fase de documentación inicial.
 
-| # | Descripción | Resultado |
-|---|---|---|
-| 1 | Debe cargar correctamente | ✅ Aprobado |
-| 2 | Debe validar la URL | ✅ Aprobado |
-| 3 | Debe verificar que la página tenga un título | ✅ Aprobado |
-| 4 | Debe tomar una captura de la página principal | ✅ Aprobado |
+### Ejecución documentada — 2026-07-05
+
+**Entorno:** rama `qa-automation-course`, servidor iniciado con `npm run dev`,
+Cypress 15.17.0, Electron 138 (headless), Node v22.21.1.
+
+**Workaround aplicado (QA-005):** `Remove-Item Env:ELECTRON_RUN_AS_NODE`
+ejecutado en el mismo proceso antes de correr Cypress. Ver
+`docs/qa/hallazgos/QA-005-cypress-verify-falla.md`.
+
+**Comando:**
+```powershell
+Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+npx cypress run --spec "cypress/e2e/home.cy.js"
+```
+
+**Resultados:**
+
+| # | Descripción | Resultado | Duración |
+|---|---|---|---|
+| 1 | Debe cargar correctamente | ❌ FAILED | ~35 s |
+| 2 | Debe validar la URL | ✅ Passed | 8 692 ms |
+| 3 | Debe verificar que la página tenga un título | ✅ Passed | 5 350 ms |
+| 4 | Debe tomar una captura de la página principal | ✅ Passed | 17 942 ms |
+
+**Resumen:** 3 passing, 1 failing — duración total 1 minuto 3 segundos.
+
+**Error del test 1:**
+```
+CypressError: cy.visit() failed trying to load: http://localhost:3000/
+Error: ESOCKETTIMEDOUT
+```
+
+`ESOCKETTIMEDOUT` es un timeout a nivel de socket: la conexión TCP se
+estableció pero no llegó respuesta HTTP dentro del tiempo esperado. El
+servidor de desarrollo estaba en proceso de compilar la primera ruta (JIT)
+cuando el test 1 inició. Los tests 2, 3 y 4 corrieron después de que test 1
+agotó su timeout (~35 s), momento en que la compilación ya había completado.
+
+Este comportamiento está documentado como riesgo conocido en
+`docs/qa/02-estabilizacion-del-proyecto.md`: la primera compilación JIT
+de Next.js puede causar fallos de timing en Cypress. La mejora propuesta
+(`beforeEach` con visita de calentamiento o mayor tiempo de espera) se
+abordará en el módulo 5.
 
 ### `api-usuarios.cy.js` — test no ejecutado ⚠️
 
@@ -79,17 +119,25 @@ no es aplicable al estado actual y está pendiente de reemplazo.
 
 ## Evidencias
 
-### Screenshot generado
-El test 4 de `home.cy.js` generó el archivo `pagina-principal.png`
-correctamente en la ejecución local.
+### Screenshots generadas — 2026-07-05
+
+| Archivo | Tipo | Tamaño | Resolución |
+|---|---|---|---|
+| `pagina-principal.png` | Captura solicitada (test 4) | 3.6 MB | 1000×8871 px |
+| `Página principal del proyecto -- Debe cargar correctamente (failed).png` | Captura automática de fallo | 39 KB | 1280×720 px |
+
+Ruta: `cypress/screenshots/home.cy.js/`
 
 ### Estado de versionado
-La carpeta `cypress/screenshots/` existe en el repositorio pero aparece **vacía**
-en la auditoría del commit inicial. La imagen `pagina-principal.png` fue generada
-localmente pero aún no está versionada en el repositorio de GitHub.
+`cypress/screenshots/` **no está en `.gitignore`**. La carpeta aparece
+como `Untracked files` en `git status`, lo que significa que Git la ve
+pero no la rastrea. Si se ejecuta `git add .`, los screenshots se
+incluirían en el commit.
 
-> Pendiente: decidir si los screenshots de prueba deben commitearse, agregarse
-> a `.gitignore`, o gestionarse como artefactos de CI.
+Pendiente de aprobación: agregar `cypress/screenshots/` a `.gitignore`
+para excluir las capturas generadas automáticamente. Los screenshots se
+gestionarán como artefactos de CI en el módulo 10, no como archivos
+versionados.
 
 ## Errores encontrados
 - Cypress reportaba "no spec files were found" antes de corregir la
