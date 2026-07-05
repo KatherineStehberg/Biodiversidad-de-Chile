@@ -1,0 +1,8 @@
+# Índice de Hallazgos QA — Biodiversidad de Chile
+
+| ID | Título | Severidad | Prioridad | Estado | Fase interna / Módulo oficial |
+|---|---|---|---|---|---|
+| QA-001 | Archivo api-usuarios.cy.js referencia endpoint inexistente | Media | Alta | Abierto | Fase: Estabilización / Módulo 4 — Cypress básico |
+| QA-002 | TypeScript desactivado durante el build | Media | Media | Abierto | Fase: Estabilización / Módulo 10 — CI/CD |
+| QA-003 | ESLint desactivado durante el build | Baja | Baja | Abierto | Fase: Estabilización / Módulo 10 — CI/CD |
+| QA-004 | Archivo .env.example ausente | Baja | Baja | Abierto | Fase: Estabilización |
