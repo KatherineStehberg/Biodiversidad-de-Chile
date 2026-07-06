@@ -578,8 +578,136 @@ Commit: `0c610c2 test(cypress): reemplazar selector body por header en home`
 
 ---
 
+## Fixtures como contrato de datos
+
+### ¿Qué es un fixture en Cypress?
+
+Un **fixture** es un archivo de datos estáticos almacenado en `cypress/fixtures/`. Cypress
+lo carga con `cy.fixture()` y devuelve su contenido parseado como objeto JavaScript. El
+fixture por sí solo no intercepta ninguna petición de red — es solo datos.
+
+### `cy.fixture()`
+
+Carga un archivo de `cypress/fixtures/` y lo entrega como valor chainable:
+
+```js
+cy.fixture('api/consultants-response.json').then((data) => {
+  // data = { consultants: [] }
+})
+```
+
+La ruta es relativa a `cypress/fixtures/`. No requiere extensión si es JSON.
+
+### Fixture vs mock vs `cy.request()` vs `cy.intercept()`
+
+| Concepto | Qué es | Cuándo se usa |
+|---|---|---|
+| **Fixture** | Archivo de datos estáticos | Como referencia de estructura, cuerpo de request, o dato de prueba |
+| **Mock** | Sustitución de la respuesta real | Cuando se quiere aislar la prueba del servidor real |
+| **`cy.request()`** | Cypress llama directamente al servidor | Validar la API real — el browser no interviene |
+| **`cy.intercept()`** | Cypress intercepta requests del browser | Observar o falsificar llamadas que la app hace durante el test |
+
+### Archivos creados o modificados
+
+**Fixture creado:** `cypress/fixtures/api/consultants-response.json`
+
+```json
+{
+  "consultants": []
+}
+```
+
+Este archivo documenta la forma mínima esperada de la respuesta: un objeto con la clave
+`consultants` cuyo valor es un array.
+
+**Spec modificado:** `cypress/e2e/api/consultants.cy.js`
+
+```js
+describe('API de consultores', () => {
+  it('GET /api/consultants responde con una estructura válida', () => {
+    cy.fixture('api/consultants-response.json').then((expectedShape) => {
+      cy.request('GET', '/api/consultants').then((response) => {
+        expect(response.status).to.eq(200)
+        expect(response.headers['content-type']).to.include('application/json')
+
+        // Validar que todas las claves del fixture existen en la respuesta real
+        Object.keys(expectedShape).forEach((key) => {
+          expect(response.body).to.have.property(key)
+        })
+
+        expect(response.body.consultants).to.be.an('array')
+      })
+    })
+  })
+})
+```
+
+### Cómo se usó el fixture: contrato mínimo
+
+El test **no usa el fixture como mock**. El servidor sigue respondiendo con datos reales —
+`cy.request()` llama directamente a `/api/consultants`. El fixture actúa como **contrato de
+estructura**: define qué claves debe tener la respuesta, independientemente de los valores.
+
+La validación central es:
+
+```js
+Object.keys(expectedShape).forEach((key) => {
+  expect(response.body).to.have.property(key)
+})
+```
+
+Esto recorre todas las claves del fixture (`consultants`) y verifica que existan en la
+respuesta real. Si la API cambia y elimina esa clave, el test falla con una razón correcta.
+
+### Por qué no se usó `deep.equal`
+
+```js
+// Esto NO se hizo:
+expect(response.body).to.deep.equal(expectedShape)
+```
+
+Si la API devuelve consultores reales en el futuro, el array `consultants` ya no estaría
+vacío. Un `deep.equal` contra `{ "consultants": [] }` fallaría aunque la API esté
+funcionando correctamente. El test estaría fallando por una razón incorrecta.
+
+El fixture documenta la *forma* esperada, no los *valores* exactos.
+
+### Por qué no se usó `cy.intercept()` en este paso
+
+`cy.intercept()` intercepta requests que el **navegador** hace durante el test. Este spec
+usa `cy.request()` — Cypress llama al servidor directamente sin pasar por el browser. Además,
+para usar `cy.intercept()` correctamente necesitamos confirmar primero qué componentes
+`'use client'` de la app hacen fetch real desde el browser. Ese análisis corresponde al
+paso B6.
+
+### Resultado validado — 2026-07-06
+
+**Comando:**
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/api/consultants.cy.js"
+```
+
+| # | Descripción | Resultado | Duración |
+|---|---|---|---|
+| 1 | GET /api/consultants responde con una estructura válida | ✅ Passed | 11 975 ms |
+
+| Campo | Valor |
+|---|---|
+| Tests | 1 |
+| Passing | 1 |
+| Failing | 0 |
+| Exit code | 0 |
+
+Nota: Cypress emitió una advertencia sobre no poder eliminar la carpeta de screenshots anterior
+(`trash`). Es cosmética — no afectó el exit code ni los resultados.
+
+Commit: `8d55bb1 test(cypress): agregar fixture de contrato para api consultants`
+
+---
+
 ## Pendientes del módulo
 
-- Crear fixture para `cypress/e2e/api/consultants.cy.js`
 - Implementar Page Object Model para la página principal
 - Investigar qué componentes `'use client'` hacen fetch real para usar `cy.intercept()`

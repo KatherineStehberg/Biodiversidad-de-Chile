@@ -827,4 +827,98 @@ había una carta dentro. El sobre siempre existe; lo importante es lo que contie
 
 ---
 
+## Sesión 10 — Módulo 5: fixture como contrato de datos en prueba API
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que un fixture no siempre reemplaza una API. También puede servir como referencia controlada
+para validar la forma mínima esperada de una respuesta. El test sigue llamando al servidor
+real con `cy.request()`; el fixture actúa como contrato documentado de estructura.
+
+**Cambio aplicado**
+
+Se creó `cypress/fixtures/api/consultants-response.json`:
+
+```json
+{
+  "consultants": []
+}
+```
+
+Se actualizó `cypress/e2e/api/consultants.cy.js` para cargar el fixture y usar sus claves
+como contrato mínimo:
+
+```js
+cy.fixture('api/consultants-response.json').then((expectedShape) => {
+  cy.request('GET', '/api/consultants').then((response) => {
+    expect(response.status).to.eq(200)
+    expect(response.headers['content-type']).to.include('application/json')
+
+    Object.keys(expectedShape).forEach((key) => {
+      expect(response.body).to.have.property(key)
+    })
+
+    expect(response.body.consultants).to.be.an('array')
+  })
+})
+```
+
+**Conceptos nuevos**
+- **Fixture:** archivo de datos estáticos en `cypress/fixtures/`. No intercepta nada por
+  sí solo.
+- **`cy.fixture()`:** carga un archivo de fixtures y entrega su contenido como objeto.
+- **Contrato de datos:** el fixture define qué claves debe tener la respuesta, sin importar
+  los valores. Valida la *forma*, no el *contenido exacto*.
+- **`cy.request()`:** Cypress llama directamente al servidor, sin pasar por el browser.
+  Ideal para validar la API real.
+- **Diferencia fixture vs mock:** el fixture es dato; el mock es comportamiento (sustituye
+  la respuesta real). Aquí usamos fixture sin mock — el servidor respondió de verdad.
+- **Diferencia `cy.request()` vs `cy.intercept()`:** `cy.request()` lo hace Cypress
+  directamente; `cy.intercept()` intercepta lo que el browser hace durante el test.
+
+**Por qué no se usó `deep.equal`**
+Si la API devuelve consultores reales en el futuro, el array no estará vacío. Un
+`deep.equal` contra `{ "consultants": [] }` fallaría aunque todo funcione correctamente.
+Se validaron solo las claves, no los valores.
+
+**Resultado obtenido**
+
+| # | Test | Resultado | Duración |
+|---|------|-----------|----------|
+| 1 | GET /api/consultants responde con una estructura válida | ✅ | 11 975 ms |
+
+1/1 passing — 12 segundos — exit code 0
+
+**Aprendizaje clave**
+Un fixture no siempre reemplaza una API; también puede servir como referencia controlada
+para validar la forma mínima esperada de una respuesta. La diferencia entre un fixture como
+contrato y un fixture como mock está en si `cy.intercept()` está involucrado o no.
+
+**Comandos utilizados**
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/api/consultants.cy.js"
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+El fixture es como un formulario en blanco que dice qué campos debe tener una respuesta.
+No rellena el formulario — eso lo hace el servidor real. Solo sirve para verificar que el
+servidor devolvió un formulario con los campos correctos.
+
+**Vocabulario técnico (inglés)**
+- *fixture* = archivo de datos estáticos para tests
+- *contract testing* = validar que una respuesta tiene la forma esperada sin comparar valores exactos
+- *mock* = respuesta simulada que reemplaza al servidor real
+- *stub* = sinónimo de mock en el contexto de Cypress/Sinon
+
+**Evidencia**
+- `git diff --cached` confirmó cambios en `consultants.cy.js` y nuevo archivo `consultants-response.json`
+- Commit: `8d55bb1 test(cypress): agregar fixture de contrato para api consultants`
+
+**Pendientes**
+- Implementar Page Object Model
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
