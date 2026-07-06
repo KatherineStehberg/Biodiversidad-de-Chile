@@ -324,4 +324,143 @@ lista para abrir.
 
 ---
 
+## Sesión 5 — Módulo 4: reemplazo de api-usuarios.cy.js por prueba real
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que `cy.intercept()` y `cy.request()` no son intercambiables: tienen propósitos
+distintos. Un test que usa `cy.intercept()` para un endpoint que la app nunca
+llama no es solo un test que falla — es un test que nunca puede pasar, porque
+la condición que espera no existe.
+
+**Análisis de api-usuarios.cy.js**
+El archivo original registraba un interceptor para `GET /api/usuarios` y luego
+visitaba la página principal esperando que la página realizara esa solicitud:
+
+```javascript
+cy.intercept('GET', '/api/usuarios').as('getUsuarios')
+cy.visit('http://localhost:3000')
+cy.wait('@getUsuarios')  // esperaba una solicitud que nunca ocurría
+```
+
+Dos problemas independientes hacían este test imposible de pasar:
+1. El endpoint `/api/usuarios` no existe en el proyecto (no hay `src/app/api/usuarios/route.ts`)
+2. La página principal nunca hace `fetch('/api/usuarios')` — el interceptor nunca se activaría
+
+**Descarte de GET /api/products como alternativa**
+Se analizó si `/marketplace` llama a `GET /api/products` al cargar, con el
+objetivo de usar ese endpoint como reemplazo. Resultado:
+
+- `marketplace/page.tsx` es un Server Component que consulta Supabase directamente
+  desde el servidor, no vía HTTP. No emite ninguna solicitud `GET /api/products`.
+- `src/app/api/products/route.ts` solo tiene un handler `POST` — no existe `GET`.
+- Confirmado con ejecución real: `GET /api/products` responde **HTTP 405 Method Not Allowed**.
+
+**Evidencia de GET /api/products → 405:**
+```
+GET http://localhost:3000/api/products
+HTTP 405 Method Not Allowed
+```
+
+**Descubrimiento de GET /api/consultants**
+Al inspeccionar los handlers `GET` disponibles en el proyecto, se identificó
+`GET /api/consultants` como un endpoint real, público y estable:
+
+- Existe en `src/app/api/consultants/route.ts`
+- No requiere autenticación
+- Responde siempre JSON con la clave `consultants` (array)
+- Confirmado con ejecución real: `GET /api/consultants` responde **HTTP 200**
+
+**Evidencia de GET /api/consultants → 200:**
+```json
+{ "consultants": [] }
+```
+
+**Decisión: cy.request() en lugar de cy.intercept()**
+`cy.request()` realiza una solicitud HTTP directamente desde Cypress — el test
+mismo emite la solicitud y verifica la respuesta. No depende de que ninguna
+página llame al endpoint.
+
+`cy.intercept()` solo observa solicitudes que la app ya hace. Si la app nunca
+llama al endpoint, el interceptor nunca se activa y el test cuelga hasta agotar
+el timeout. Usar `cy.intercept()` sin confirmar primero que la solicitud ocurre
+es un antipatrón.
+
+**Resultado de la ejecución: 1/1 passing**
+
+```javascript
+// cypress/e2e/api-consultants.cy.js
+describe('API de consultores', () => {
+  it('GET /api/consultants responde con una estructura válida', () => {
+    cy.request('GET', '/api/consultants').then((response) => {
+      expect(response.status).to.eq(200)
+      expect(response.headers['content-type']).to.include('application/json')
+      expect(response.body).to.have.property('consultants')
+      expect(response.body.consultants).to.be.an('array')
+    })
+  })
+})
+```
+
+| # | Resultado | Duración |
+|---|---|---|
+| 1 — GET /api/consultants responde con una estructura válida | ✅ | 4 364 ms |
+
+Duración total: 4 segundos. Exit code 0.
+
+**Conceptos nuevos**
+
+- **`cy.request()`:** emite una solicitud HTTP desde Cypress directamente,
+  sin el navegador. Ideal para probar contratos de API de forma aislada.
+- **`cy.intercept()`:** observa o simula solicitudes que la app hace por sí
+  misma. No genera ninguna solicitud — solo escucha. Requiere que la solicitud
+  ocurra primero desde la aplicación.
+- **Contrato de API:** la especificación mínima que un endpoint debe cumplir:
+  método, ruta, código de respuesta, Content-Type y estructura del body.
+  Verificar el contrato es independiente de verificar el contenido de los datos.
+- **Handler HTTP:** función en el servidor que responde a un método específico
+  (GET, POST, PUT, DELETE). Un endpoint puede tener POST sin tener GET —
+  son handlers separados.
+- **HTTP 405 Method Not Allowed:** el servidor reconoce la ruta pero no soporta
+  el método solicitado. En este caso, `POST /api/products` existe pero
+  `GET /api/products` no.
+
+**Principio aplicado**
+Antes de escribir un test con `cy.intercept()`, confirmar por código Y por
+ejecución que la app efectivamente realiza esa solicitud. Si no se puede
+confirmar, usar `cy.request()` para probar el endpoint directamente.
+
+**Comandos utilizados**
+```powershell
+# Validación de GET /api/products (descarte)
+Invoke-WebRequest -Uri "http://localhost:3000/api/products" -TimeoutSec 10 -UseBasicParsing
+# → HTTP 405
+
+# Validación de GET /api/consultants (confirmación)
+Invoke-WebRequest -Uri "http://localhost:3000/api/consultants" -TimeoutSec 15 -UseBasicParsing
+# → HTTP 200, {"consultants":[]}
+
+# Ejecución de la nueva prueba
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/api-consultants.cy.js"
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+`cy.intercept()` es como poner una grabadora en el teléfono esperando que alguien
+llame. Si nadie llama, la grabadora no registra nada. `cy.request()` es como ser
+vos quien llama directamente — no necesitás esperar a que nadie más marque el número.
+
+**Vocabulario técnico (inglés)**
+- *API contract* = contrato de API — qué promete responder un endpoint
+- *method handler* = función que procesa un método HTTP específico (GET, POST…)
+- *direct request* = solicitud directa desde el test, sin pasar por la UI
+- *intercept* = interceptar, observar o modificar solicitudes existentes
+
+**Pendientes**
+- Formalizar script de inicio con calentamiento para ejecución reproducible
+- Ampliar `api-consultants.cy.js` con más assertions en módulos futuros
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*

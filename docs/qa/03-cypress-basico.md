@@ -29,7 +29,8 @@ De forma independiente al problema de configuración, se identificó por
 inspección del código que el archivo `api-usuarios.cy.js` intercepta
 `GET /api/usuarios`, pero ese endpoint no existe en el proyecto
 (no hay `src/app/api/usuarios/route.ts`). El test nunca llegó a ejecutarse
-en la evidencia disponible y no es aplicable al estado actual del proyecto.
+en la evidencia disponible y no era aplicable al estado actual del proyecto.
+Resuelto en Módulo 4: reemplazado por `api-consultants.cy.js`.
 
 ### Problema 3 — Sin scripts npm para Cypress
 `package.json` no tiene scripts `cypress:open` ni `cypress:run`.
@@ -37,8 +38,8 @@ en la evidencia disponible y no es aplicable al estado actual del proyecto.
 ## Decisión tomada
 - Documentar los 4 tests de `home.cy.js` como aprobados (resultado real,
   ejecutados localmente por la desarrolladora).
-- Documentar `api-usuarios.cy.js` como no ejecutado y no aplicable al
-  proyecto actual, pendiente de reemplazo por una prueba de un endpoint real.
+- Reemplazar `api-usuarios.cy.js` por `api-consultants.cy.js`, prueba real
+  del endpoint `GET /api/consultants` mediante `cy.request()`.
 - No modificar ni eliminar archivos sin aprobación.
 
 ## Cambios realizados
@@ -107,13 +108,13 @@ Este comportamiento es un fallo de infraestructura, no un defecto del test.
 La ruta `/` no estaba precompilada cuando Cypress inició. El Módulo 5 evaluará
 estrategias para gestionar la compilación JIT en entornos de desarrollo.
 
-### `api-usuarios.cy.js` — test no ejecutado ⚠️
+### `api-usuarios.cy.js` — eliminado y reemplazado ✅
 
-El archivo existe en el repositorio pero no llegó a ejecutarse.
-Cypress reportaba inicialmente "no spec files were found".
-La inspección posterior del código confirmó que el endpoint
-`/api/usuarios` no existe en el proyecto, por lo que el archivo
-no es aplicable al estado actual y está pendiente de reemplazo.
+El archivo fue identificado como no aplicable: usaba
+`cy.intercept('GET', '/api/usuarios')` sobre la página principal, pero ese
+endpoint no existe en el proyecto y la página nunca realiza esa solicitud —
+el interceptor nunca se habría activado. Fue eliminado y reemplazado por
+`api-consultants.cy.js`. Ver sección siguiente.
 
 ### Ejecución controlada con calentamiento previo — 2026-07-05
 
@@ -155,6 +156,52 @@ defecto del test. Resolverlo no requirió modificar `home.cy.js` ni aumentar
 timeouts. El Módulo 5 evaluará cómo incorporar esta garantía dentro de la
 secuencia de ejecución.
 
+### `api-consultants.cy.js` — prueba real de API — 2026-07-06
+
+**Contexto:** `api-usuarios.cy.js` fue reemplazado por `api-consultants.cy.js`.
+El archivo original usaba `cy.intercept('GET', '/api/usuarios')` sobre la
+página principal, pero ese endpoint no existe en el proyecto y la página
+nunca realiza esa solicitud — el interceptor nunca se habría activado.
+
+**`cy.request()` vs `cy.intercept()`:**
+
+`cy.request()` realiza una solicitud HTTP directamente desde Cypress, sin
+pasar por el navegador. No depende del comportamiento de ninguna página:
+el test mismo emite la solicitud y verifica la respuesta. Es la herramienta
+correcta para probar un endpoint de API de forma aislada.
+
+`cy.intercept()` registra un observador sobre solicitudes que la aplicación
+ya hace. No genera ninguna solicitud: solo escucha. Si la página nunca llama
+al endpoint interceptado, el observador queda inactivo y `cy.wait()` agota
+su tiempo de espera sin resultado. Para que `cy.intercept()` sea útil debe
+haber confirmación previa de que la app efectivamente realiza esa solicitud.
+
+En este caso ninguna página llama a `GET /api/consultants` al cargar, por lo
+que `cy.request()` fue la opción correcta: el test es directo, determinista
+y no depende del comportamiento de ninguna interfaz.
+
+**Comando:**
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/api-consultants.cy.js"
+```
+
+**Resultado:**
+
+| # | Descripción | Resultado | Duración |
+|---|---|---|---|
+| 1 | GET /api/consultants responde con una estructura válida | ✅ Passed | 4 364 ms |
+
+**Resumen:** 1 passing, 0 failing — duración total 4 segundos. Exit code 0.
+
+**Respuesta recibida:**
+```json
+{ "consultants": [] }
+```
+HTTP 200, Content-Type: application/json. Array vacío — respuesta válida:
+el test verifica el contrato de la API (estructura), no el contenido de
+los datos.
+
 ## Evidencias
 
 ### Screenshots generadas — 2026-07-05
@@ -175,14 +222,16 @@ gestionarán como artefactos de CI en el módulo 10.
 ## Errores encontrados
 - Cypress reportaba "no spec files were found" antes de corregir la
   configuración.
-- `api-usuarios.cy.js` no es aplicable: el endpoint `/api/usuarios`
-  no existe en `src/app/api/`. El test nunca llegó a ejecutarse.
+- `api-usuarios.cy.js` no era aplicable: el endpoint `/api/usuarios` no
+  existe en `src/app/api/`. El archivo fue reemplazado por
+  `api-consultants.cy.js`.
 
 ## Cómo se resolvieron
 - El problema de configuración se abordó agregando `defineConfig` y
   `specPattern` explícito en `cypress.config.ts`.
-- La situación de `api-usuarios.cy.js` no se resolvió en esta fase.
-  Se traslada como pendiente de reemplazo (ver Pendientes).
+- `api-usuarios.cy.js` fue reemplazado por `api-consultants.cy.js`, que
+  prueba el endpoint real `GET /api/consultants` con `cy.request()`.
+  Resultado: 1/1 passing.
 
 ## Aprendizajes
 - Cypress requiere que la aplicación esté corriendo (`npm run dev`) antes de
@@ -193,13 +242,11 @@ gestionarán como artefactos de CI en el módulo 10.
   `cypress/screenshots/` está vacía en el commit o no se ha hecho push.
 
 ## Pendientes
-- Reemplazar `api-usuarios.cy.js` por una prueba de un endpoint real
-  (p. ej. `cy.request('GET', '/api/consultants')`).
 - Agregar scripts `cypress:open` y `cypress:run` a `package.json`.
-- Decidir la estrategia de versionado de screenshots.
+- Decidir la estrategia de versionado de screenshots en el módulo 10.
 - Ampliar `home.cy.js` con pruebas de navbar, footer y links de navegación.
 
 ## Relación con el módulo del curso
 **Módulo 4 del curso.** Primeras pruebas E2E con Cypress. Introducción a
-`cy.visit`, `cy.get`, `cy.url`, `cy.title`, `cy.screenshot` y
-`cy.intercept`. Configuración de `baseUrl` y `specPattern`.
+`cy.visit`, `cy.get`, `cy.url`, `cy.title`, `cy.screenshot`, `cy.intercept`
+y `cy.request`. Configuración de `baseUrl` y `specPattern`.
