@@ -1,6 +1,6 @@
 describe('Página principal del proyecto', () => {
   beforeEach(() => {
-    cy.visit('/')
+    cy.visitHome()
   })
 
   it('Debe cargar correctamente', () => {
