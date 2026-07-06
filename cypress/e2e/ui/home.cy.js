@@ -4,7 +4,7 @@ describe('Página principal del proyecto', () => {
   })
 
   it('Debe cargar correctamente', () => {
-    cy.get('body').should('be.visible')
+    cy.get('header').should('be.visible')
   })
 
   it('Debe validar la URL', () => {
