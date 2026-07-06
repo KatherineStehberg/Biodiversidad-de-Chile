@@ -372,10 +372,118 @@ estructura, pero el comportamiento de los tests es idéntico.
 
 ---
 
+## Comandos personalizados en Cypress
+
+### ¿Qué es un custom command?
+
+Un **comando personalizado** (*custom command*) es una función registrada en
+el objeto `cy` que puede usarse igual que cualquier comando nativo de Cypress.
+Se define en `cypress/support/commands.ts` y queda disponible en todos los
+specs automáticamente, porque `cypress/support/e2e.ts` importa ese archivo
+antes de que cualquier spec se ejecute.
+
+### `Cypress.Commands.add()`
+
+Es la función que registra el nuevo comando. Recibe el nombre del comando
+como string y la función que lo implementa:
+
+```ts
+Cypress.Commands.add('visitHome', () => {
+  cy.visit('/')
+})
+```
+
+A partir de ese registro, `cy.visitHome()` existe en toda la suite.
+
+### Declaración de tipos en TypeScript
+
+Como `commands.ts` es un archivo TypeScript, Cypress necesita que el tipo
+del nuevo comando esté declarado para reconocerlo en los specs. Se extiende
+la interfaz `Chainable` del namespace `Cypress`:
+
+```ts
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      visitHome(): Chainable<void>
+    }
+  }
+}
+
+export {}
+```
+
+Sin esta declaración, TypeScript marcaría `cy.visitHome()` como error de tipo,
+aunque el test correría igualmente en tiempo de ejecución.
+
+### Comando creado
+
+| Campo | Valor |
+|---|---|
+| Nombre | `cy.visitHome()` |
+| Definido en | `cypress/support/commands.ts` |
+| Usado en | `cypress/e2e/ui/home.cy.js` |
+| Implementación interna | `cy.visit('/')` |
+
+### Cambio aplicado en `home.cy.js`
+
+**Antes:**
+
+```js
+beforeEach(() => {
+  cy.visit('/')
+})
+```
+
+**Después:**
+
+```js
+beforeEach(() => {
+  cy.visitHome()
+})
+```
+
+### Por qué no cambia el comportamiento
+
+`cy.visitHome()` llama a `cy.visit('/')` internamente. Cypress ejecuta
+exactamente los mismos pasos: navega a `baseUrl + '/'`, espera que la página
+cargue y continúa. El resultado observable es idéntico.
+
+Lo que mejora es la **legibilidad**: `cy.visitHome()` expresa una intención
+de negocio, no una instrucción técnica. Y la **reutilización**: si la ruta
+de la página de inicio cambia de `/` a `/inicio`, se actualiza en un solo
+lugar (`commands.ts`), no en todos los specs que la usan.
+
+### Resultado validado — 2026-07-06
+
+**Comando:**
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/ui/home.cy.js"
+```
+
+| # | Descripción                                    | Resultado | Duración  |
+|---|------------------------------------------------|-----------|-----------|
+| 1 | Debe cargar correctamente                      | ✅ Passed  | 15 494 ms |
+| 2 | Debe validar la URL                            | ✅ Passed  | 6 444 ms  |
+| 3 | Debe verificar que la página tenga un título   | ✅ Passed  | 5 473 ms  |
+| 4 | Debe tomar una captura de la página principal  | ✅ Passed  | 20 218 ms |
+
+| Campo       | Valor   |
+|-------------|---------|
+| Tests       | 4       |
+| Passing     | 4       |
+| Failing     | 0       |
+| Exit code   | 0       |
+
+Commit: `06d551d test(cypress): agregar comando personalizado visitHome`
+
+---
+
 ## Pendientes del módulo
 
 - Mejorar selectores en `cypress/e2e/ui/home.cy.js` (reemplazar `cy.get('body')`)
-- Agregar comando personalizado `cy.visitHome()`
 - Crear fixture para `cypress/e2e/api/consultants.cy.js`
 - Implementar Page Object Model para la página principal
 - Investigar qué componentes `'use client'` hacen fetch real para usar `cy.intercept()`

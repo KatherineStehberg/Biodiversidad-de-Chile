@@ -646,4 +646,106 @@ y la persona que llegue nueva sabe exactamente dónde buscar.
 
 ---
 
+## Sesión 8 — Módulo 5: creación de custom command `cy.visitHome()`
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que los comandos personalizados de Cypress no sirven solo para ahorrar
+código — sirven para nombrar acciones con intención. `cy.visitHome()` dice
+qué se hace; `cy.visit('/')` dice cómo. Esa diferencia importa cuando el
+proyecto crece y más personas leen los tests.
+
+**Cambio aplicado**
+
+Se creó el comando `cy.visitHome()` en `cypress/support/commands.ts`:
+
+```ts
+Cypress.Commands.add('visitHome', () => {
+  cy.visit('/')
+})
+```
+
+Se agregó su declaración de tipo para que TypeScript lo reconozca:
+
+```ts
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      visitHome(): Chainable<void>
+    }
+  }
+}
+```
+
+Se reemplazó `cy.visit('/')` por `cy.visitHome()` en el `beforeEach` de
+`cypress/e2e/ui/home.cy.js`:
+
+```js
+// Antes
+beforeEach(() => { cy.visit('/') })
+
+// Después
+beforeEach(() => { cy.visitHome() })
+```
+
+**Conceptos nuevos**
+- **Custom command:** función registrada en `cy` que puede usarse como
+  comando nativo en cualquier spec. Se define con `Cypress.Commands.add()`.
+- **`Cypress.Commands.add()`:** registra el nuevo comando en el objeto `cy`.
+  Disponible globalmente porque `e2e.ts` importa `commands.ts` antes de los specs.
+- **Reutilización:** si la ruta de la página de inicio cambia, se actualiza
+  solo en `commands.ts`, no en todos los specs que la usan.
+- **Legibilidad:** `cy.visitHome()` expresa intención de negocio.
+  `cy.visit('/')` es una instrucción técnica.
+- **Declaración de tipos:** en TypeScript, extender la interfaz `Chainable`
+  permite que el compilador reconozca el nuevo comando y no marque error de tipo.
+
+**Resultado obtenido**
+
+| # | Test | Resultado | Duración |
+|---|------|-----------|----------|
+| 1 | Debe cargar correctamente | ✅ | 15 494 ms |
+| 2 | Debe validar la URL | ✅ | 6 444 ms |
+| 3 | Debe verificar que la página tenga un título | ✅ | 5 473 ms |
+| 4 | Debe tomar una captura de la página principal | ✅ | 20 218 ms |
+
+4/4 passing — 48 segundos — exit code 0
+
+**Aprendizaje clave**
+Un comando personalizado no debe ocultar lógica compleja innecesariamente.
+Debe nombrar una acción repetible y mejorar la claridad del test. Si el
+nombre del comando no comunica más que la instrucción que reemplaza,
+probablemente no justifica su existencia. `cy.visitHome()` sí lo justifica:
+dice adónde vas, no cómo llegas.
+
+**Comandos utilizados**
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/ui/home.cy.js"
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Es como tener un botón en el tablero del auto que dice "ir a casa" en lugar
+de tener que escribir la dirección completa cada vez. Por dentro hace lo
+mismo — navega a esa dirección — pero vos solo necesitás saber que ese botón
+existe y a dónde lleva.
+
+**Vocabulario técnico (inglés)**
+- *custom command* = comando personalizado registrado en `cy`
+- *Chainable* = encadenable — tipo que permite seguir usando `.then()`, `.should()`, etc.
+- *namespace* = espacio de nombres — forma de agrupar tipos en TypeScript
+- *interface extension* = extensión de interfaz — agregar propiedades a un tipo existente
+
+**Evidencia**
+- `git diff --cached` confirmó cambios solo en `commands.ts` y `home.cy.js`
+- Commit: `06d551d test(cypress): agregar comando personalizado visitHome`
+
+**Pendientes**
+- Mejorar selectores en `ui/home.cy.js`
+- Crear fixture para `api/consultants.cy.js`
+- Implementar Page Object Model
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
