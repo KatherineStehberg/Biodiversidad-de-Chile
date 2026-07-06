@@ -283,11 +283,99 @@ directo en cada test. Son dos problemas distintos:
 
 ---
 
+## Organización de specs por tipo de prueba
+
+### Cambio realizado
+
+**Antes:**
+
+```
+cypress/e2e/home.cy.js
+cypress/e2e/api-consultants.cy.js
+```
+
+**Después:**
+
+```
+cypress/e2e/
+├── api/
+│   └── consultants.cy.js
+└── ui/
+    └── home.cy.js
+```
+
+Los archivos fueron movidos con `git mv`. Ningún contenido fue modificado.
+Git los registró como renombrados con similitud R100 (100% idénticos).
+
+Commit: `47d9931 refactor(cypress): organizar specs en carpetas ui y api`
+
+---
+
+### Conceptos aplicados
+
+- **Spec:** archivo de prueba que contiene uno o más tests. En Cypress,
+  cada archivo `.cy.js` es un spec.
+- **Suite:** grupo de tests relacionados, normalmente agrupados dentro de
+  un bloque `describe()`. Un spec puede contener una o varias suites.
+- **Prueba UI:** valida la interfaz, la navegación o el comportamiento
+  visible desde el navegador — interacción con elementos del DOM.
+- **Prueba API:** valida endpoints HTTP directamente — status codes,
+  estructura de respuesta y contratos de la API, sin pasar por el navegador.
+- **Organización por tipo:** separar pruebas UI de pruebas API en carpetas
+  distintas permite identificar más rápido qué se está probando, ejecutar
+  solo un tipo de prueba en CI (`--spec "cypress/e2e/ui/**"`) y escalar la
+  suite sin mezclar responsabilidades.
+
+---
+
+### Por qué no fue necesario modificar `cypress.config.ts`
+
+El `specPattern` configurado es:
+
+```ts
+specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
+```
+
+El `**` es un glob recursivo que cubre cualquier nivel de subcarpeta dentro
+de `cypress/e2e/`. Tanto `ui/home.cy.js` como `api/consultants.cy.js` quedan
+dentro del patrón. Cypress los detectó automáticamente sin ningún cambio de
+configuración.
+
+---
+
+### Resultado validado — 2026-07-06
+
+**Comando:**
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run
+```
+
+| Spec                   | Tests | Passing | Failing | Duración |
+|------------------------|-------|---------|---------|----------|
+| `api/consultants.cy.js` | 1    | 1       | 0       | 7 s      |
+| `ui/home.cy.js`         | 4    | 4       | 0       | 59 s     |
+| **Total**               | **5** | **5**  | **0**   | **1:06** |
+
+- Specs encontrados: 2 ✅
+- Exit code: 0 ✅
+- Archivos renombrados R100 — sin cambios de contenido ✅
+
+---
+
+### Aclaración
+
+Este cambio no modifica la lógica de ningún test ni ninguna aserción.
+Es un cambio de organización del proyecto: mejora la legibilidad y la
+estructura, pero el comportamiento de los tests es idéntico.
+
+---
+
 ## Pendientes del módulo
 
-- Mejorar selectores en `home.cy.js` (reemplazar `cy.get('body')`)
+- Mejorar selectores en `cypress/e2e/ui/home.cy.js` (reemplazar `cy.get('body')`)
 - Agregar comando personalizado `cy.visitHome()`
-- Crear fixture para `api-consultants.cy.js`
+- Crear fixture para `cypress/e2e/api/consultants.cy.js`
 - Implementar Page Object Model para la página principal
 - Investigar qué componentes `'use client'` hacen fetch real para usar `cy.intercept()`
-- Reorganizar specs en subcarpetas `ui/` y `api/`

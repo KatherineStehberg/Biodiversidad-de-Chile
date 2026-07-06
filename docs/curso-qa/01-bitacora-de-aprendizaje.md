@@ -561,4 +561,89 @@ Abrir las puertas (calentar el servidor) es un paso previo y distinto.
 
 ---
 
+## Sesión 7 — Módulo 5: organización de specs en carpetas `ui/` y `api/`
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que organizar archivos de prueba en carpetas por tipo no cambia el
+comportamiento de los tests, pero mejora la legibilidad del proyecto y
+prepara la suite para crecer sin mezclar responsabilidades.
+
+**Cambio aplicado**
+
+| Antes | Después |
+|---|---|
+| `cypress/e2e/home.cy.js` | `cypress/e2e/ui/home.cy.js` |
+| `cypress/e2e/api-consultants.cy.js` | `cypress/e2e/api/consultants.cy.js` |
+
+Los archivos fueron movidos con `git mv`. El contenido de los tests no fue
+modificado. Git los registró como `R100` — renombrados con 100% de similitud.
+
+No fue necesario modificar `cypress.config.ts` porque el `specPattern`
+usa `**`, que cubre cualquier nivel de subcarpeta dentro de `cypress/e2e/`.
+
+**Conceptos nuevos**
+- **Spec:** archivo de prueba que contiene uno o más tests (`.cy.js`).
+- **Suite:** grupo de tests relacionados definido por un bloque `describe()`.
+- **Prueba UI:** valida la interfaz visible — interacción con el DOM,
+  navegación, elementos visibles en el navegador.
+- **Prueba API:** valida endpoints HTTP directamente — status code,
+  Content-Type, estructura del body. No usa el navegador.
+- **Organización por tipo de prueba:** separar specs en carpetas según
+  su naturaleza (UI, API, etc.) mejora la mantenibilidad y permite ejecutar
+  subconjuntos en CI con `--spec "cypress/e2e/ui/**"`.
+
+**Resultado obtenido**
+
+| Spec | Tests | Passing | Duración |
+|---|---|---|---|
+| `api/consultants.cy.js` | 1 | 1 | 7 s |
+| `ui/home.cy.js` | 4 | 4 | 59 s |
+| **Total** | **5** | **5** | **1:06** |
+
+2 specs detectados — 5/5 passing — exit code 0
+
+**Comandos utilizados**
+```powershell
+# Movimiento de archivos sin cambiar contenido
+git mv cypress/e2e/home.cy.js cypress/e2e/ui/home.cy.js
+git mv cypress/e2e/api-consultants.cy.js cypress/e2e/api/consultants.cy.js
+
+# Validación completa de todos los specs
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run
+```
+
+**Aprendizaje clave**
+Organizar specs no cambia el comportamiento de los tests. Un test que pasaba
+en `cypress/e2e/home.cy.js` sigue pasando en `cypress/e2e/ui/home.cy.js` —
+el archivo contiene exactamente lo mismo. Lo que cambia es la mantenibilidad:
+cuando el proyecto tenga 20 specs, será fácil distinguir qué prueba la UI
+y qué prueba las APIs sin leer el contenido de cada archivo.
+
+**¿Cómo lo explicaría una persona principiante?**
+Es como ordenar los documentos de una oficina en carpetas: "Facturas",
+"Contratos", "Correspondencia". Los documentos no cambian — siguen diciendo
+lo mismo. Pero ahora encontrar lo que necesitás es mucho más rápido,
+y la persona que llegue nueva sabe exactamente dónde buscar.
+
+**Vocabulario técnico (inglés)**
+- *spec* = specification, especificación — archivo de prueba
+- *suite* = conjunto — grupo de tests dentro de un `describe()`
+- *glob pattern* = patrón de búsqueda de archivos (`**` = recursivo)
+- *rename* = renombrar — en Git, `R100` indica renombrado sin cambio de contenido
+
+**Evidencia**
+- `git diff --cached --name-status` confirmó `R100` en ambos archivos
+- Commit: `47d9931 refactor(cypress): organizar specs en carpetas ui y api`
+
+**Pendientes**
+- Mejorar selectores en `ui/home.cy.js`
+- Agregar comando personalizado `cy.visitHome()`
+- Crear fixture para `api/consultants.cy.js`
+- Implementar Page Object Model
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
