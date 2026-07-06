@@ -748,4 +748,83 @@ existe y a dónde lleva.
 
 ---
 
+## Sesión 9 — Módulo 5: mejora de selector en `home.cy.js`
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que un test no debe validar solo que el navegador abrió HTML. Debe validar que un componente
+relevante de la aplicación realmente renderizó. `cy.get('body').should('be.visible')` pasa
+incluso cuando la app falló completamente. `cy.get('header').should('be.visible')` valida que
+el hero de la Home — el componente `Slider.tsx` — estuvo presente en el DOM.
+
+**Cambio aplicado**
+
+```js
+// Antes
+it('Debe cargar correctamente', () => {
+  cy.get('body').should('be.visible')
+})
+
+// Después
+it('Debe cargar correctamente', () => {
+  cy.get('header').should('be.visible')
+})
+```
+
+**Conceptos nuevos**
+- **Selector:** expresión CSS que identifica un nodo del DOM. En Cypress se pasa a `cy.get()`.
+- **Locator:** término equivalente usado en Playwright. En Cypress se usan como sinónimos.
+- **Selector robusto:** único, estable, independiente del texto visible, no requiere modificar la app.
+- **HTML semántico:** elementos como `<header>`, `<nav>`, `<footer>`, `<section>` tienen
+  significado estructural — son más estables que clases CSS.
+- **`data-cy`:** atributo agregado al código fuente para que los tests puedan encontrar el
+  elemento. Útil cuando no existe selector semántico estable. No se agregó aquí porque
+  `<header>` ya era suficiente.
+- **Diferencia clave:** `body` valida que hay HTML; `header` valida que el componente principal
+  de la Home renderizó.
+
+**Resultado obtenido**
+
+| # | Test | Resultado | Duración |
+|---|------|-----------|----------|
+| 1 | Debe cargar correctamente | ✅ | 15 975 ms |
+| 2 | Debe validar la URL | ✅ | 7 248 ms |
+| 3 | Debe verificar que la página tenga un título | ✅ | 8 386 ms |
+| 4 | Debe tomar una captura de la página principal | ✅ | 21 987 ms |
+
+4/4 passing — 54 segundos — exit code 0
+
+**Aprendizaje clave**
+Un buen test no debe validar solo que el navegador abrió HTML; debe validar que un componente
+relevante de la aplicación realmente renderizó. La diferencia entre `cy.get('body')` y
+`cy.get('header')` es la diferencia entre comprobar que hay una página y comprobar que la
+aplicación funcionó.
+
+**Comandos utilizados**
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/ui/home.cy.js"
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Antes, el test era como verificar que llegó un sobre al buzón. Ahora es como verificar que
+había una carta dentro. El sobre siempre existe; lo importante es lo que contiene.
+
+**Vocabulario técnico (inglés)**
+- *selector* = expresión que identifica un elemento del DOM
+- *locator* = término equivalente en otros frameworks (Playwright)
+- *semantic HTML* = HTML con etiquetas que describen el significado del contenido
+- *data attribute* = atributo HTML personalizado, como `data-cy`, que los tests pueden buscar
+
+**Evidencia**
+- `git diff --cached` confirmó cambios solo en `cypress/e2e/ui/home.cy.js`
+- Commit: `0c610c2 test(cypress): reemplazar selector body por header en home`
+
+**Pendientes**
+- Crear fixture para `api/consultants.cy.js`
+- Implementar Page Object Model
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*

@@ -481,9 +481,105 @@ Commit: `06d551d test(cypress): agregar comando personalizado visitHome`
 
 ---
 
+## Selectores robustos y locators
+
+### El problema con `cy.get('body')`
+
+El test original validaba:
+
+```js
+it('Debe cargar correctamente', () => {
+  cy.get('body').should('be.visible')
+})
+```
+
+`<body>` siempre existe en cualquier página HTML, incluso en una que falló completamente — una
+pantalla en blanco, un error de JavaScript que impidió renderizar cualquier componente, o una
+respuesta vacía del servidor. Este selector no verifica que la aplicación cargó correctamente;
+solo verifica que el navegador abrió una página.
+
+### Conceptos
+
+**Selector**
+Una expresión que identifica uno o más nodos del DOM. En Cypress se pasa como argumento a
+`cy.get()`. Puede ser un selector CSS (`'nav'`, `'h1'`, `'.clase'`), un atributo
+(`'[data-cy="hero"]'`) o texto (con `cy.contains()`).
+
+**Locator**
+Término más general, equivalente al selector en frameworks como Playwright. Describe *qué
+busca* (el elemento de negocio), mientras que el selector describe *cómo lo encuentra* (la
+expresión técnica). En Cypress se usan como sinónimos.
+
+**¿Qué hace robusto a un selector?**
+
+| Criterio | Descripción |
+|---|---|
+| Unicidad | Identifica exactamente un elemento |
+| Estabilidad | No cambia por rediseño (clases CSS, estructura de layout) |
+| Independencia del texto | No rompe si el copy se edita |
+| Semántica | Describe la intención del elemento, no su apariencia |
+| Sin dependencia de la app | No requiere agregar atributos solo para testear |
+
+### El selector elegido: `cy.get('header')`
+
+```js
+it('Debe cargar correctamente', () => {
+  cy.get('header').should('be.visible')
+})
+```
+
+El componente `Slider.tsx` renderiza como `<header>`. La inspección del HTML real confirmó:
+
+- **Único en la página** — 1 sola ocurrencia (verificado con servidor real y `Invoke-WebRequest`)
+- **Elemento semántico HTML5** — no es una clase CSS que puede cambiar por rediseño
+- **Representa contenido real** — es el hero de la Home, primer bloque de contenido relevante
+- **No depende de texto visible** — si el copy cambia, el selector sigue funcionando
+- **No requiere modificar el código fuente** — no fue necesario agregar `data-cy`
+
+### Cuándo conviene usar `data-cy`
+
+Cuando el elemento no tiene un selector semántico estable y único. Por ejemplo: un botón
+dentro de una lista de N productos — no tiene posición fija, su texto puede cambiar, y no
+tiene un tag semántico único. En ese caso, `data-cy="add-to-cart-button"` es la solución.
+
+### Cuándo no conviene agregar `data-cy` todavía
+
+Cuando ya existe un selector semántico estable que funciona. Agregar `data-cy` a un `<header>`
+único agrega ruido al código fuente sin aportar valor real. La regla: si el elemento tiene
+identidad clara en el HTML semántico, úsala. Solo añade `data-cy` cuando no hay alternativa.
+
+### Resultado validado — 2026-07-06
+
+**Comando:**
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/ui/home.cy.js"
+```
+
+| # | Descripción                                    | Resultado | Duración  |
+|---|------------------------------------------------|-----------|-----------|
+| 1 | Debe cargar correctamente                      | ✅ Passed  | 15 975 ms |
+| 2 | Debe validar la URL                            | ✅ Passed  | 7 248 ms  |
+| 3 | Debe verificar que la página tenga un título   | ✅ Passed  | 8 386 ms  |
+| 4 | Debe tomar una captura de la página principal  | ✅ Passed  | 21 987 ms |
+
+| Campo     | Valor |
+|-----------|-------|
+| Tests     | 4     |
+| Passing   | 4     |
+| Failing   | 0     |
+| Exit code | 0     |
+
+Nota: Cypress emitió una advertencia sobre no poder eliminar la carpeta de screenshots anterior
+(`trash`). Es cosmética — no afectó el exit code ni los resultados.
+
+Commit: `0c610c2 test(cypress): reemplazar selector body por header en home`
+
+---
+
 ## Pendientes del módulo
 
-- Mejorar selectores en `cypress/e2e/ui/home.cy.js` (reemplazar `cy.get('body')`)
 - Crear fixture para `cypress/e2e/api/consultants.cy.js`
 - Implementar Page Object Model para la página principal
 - Investigar qué componentes `'use client'` hacen fetch real para usar `cy.intercept()`
