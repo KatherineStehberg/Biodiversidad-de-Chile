@@ -463,4 +463,102 @@ vos quien llama directamente — no necesitás esperar a que nadie más marque e
 
 ---
 
+## Sesión 6 — Módulo 5: refactorización con `beforeEach()`
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que mejorar la estructura de un test y resolver un problema de infraestructura
+son dos cosas distintas. `beforeEach()` elimina la duplicación de código y
+garantiza un estado inicial común para cada test — pero no cambia nada sobre
+cómo el servidor de desarrollo compila sus rutas. Son responsabilidades diferentes.
+
+**Cambio aplicado**
+`home.cy.js` tenía `cy.visit('http://localhost:3000')` repetido en los 4 tests.
+Esa línea fue extraída a un `beforeEach()` con `cy.visit('/')`, aprovechando el
+`baseUrl` ya configurado en `cypress.config.ts`.
+
+**Antes:**
+```js
+it('Debe cargar correctamente', () => {
+  cy.visit('http://localhost:3000')   // URL hardcodeada, repetida 4 veces
+  cy.get('body').should('be.visible')
+})
+```
+
+**Después:**
+```js
+beforeEach(() => {
+  cy.visit('/')  // URL relativa resuelta contra baseUrl
+})
+
+it('Debe cargar correctamente', () => {
+  cy.get('body').should('be.visible')
+})
+```
+
+**Conceptos nuevos**
+- **Hook:** función que Cypress ejecuta automáticamente en un momento del
+  ciclo de vida de los tests — no es un test, es preparación o limpieza.
+- **`beforeEach()`:** se ejecuta antes de cada `it()`. Garantiza que todos
+  los tests parten del mismo estado inicial, independientemente del orden
+  de ejecución.
+- **`before()`:** se ejecuta una sola vez antes del primer test del bloque.
+- **`after()`:** se ejecuta una sola vez después del último test del bloque.
+- **`afterEach()`:** se ejecuta después de cada test. Útil para limpiar estado.
+- **`baseUrl`:** URL base configurada en `cypress.config.ts`. `cy.visit('/')`
+  la usa automáticamente. Centraliza la URL del entorno en un único lugar.
+
+**Resultado obtenido**
+
+| # | Test | Resultado | Duración |
+|---|------|-----------|----------|
+| 1 | Debe cargar correctamente | ✅ | 15 005 ms |
+| 2 | Debe validar la URL | ✅ | 6 790 ms |
+| 3 | Debe verificar que la página tenga un título | ✅ | 5 380 ms |
+| 4 | Debe tomar una captura de la página principal | ✅ | 20 724 ms |
+
+4/4 passing — 48 segundos — exit code 0
+
+**Aprendizaje clave**
+No toda mejora de test corrige un problema de infraestructura. `beforeEach()`
+organiza el estado inicial de cada test (quién visita la página y cuándo).
+El calentamiento HTTP resuelve un problema diferente: asegurar que el servidor
+de desarrollo haya compilado la ruta antes de que Cypress la visite.
+
+Si se ejecuta Cypress sin calentamiento, el test 1 puede seguir fallando con
+`ESOCKETTIMEDOUT` aunque el spec use `beforeEach()`. Son dos capas distintas:
+el código del test y el estado del entorno.
+
+**Comandos utilizados**
+```powershell
+# Misma secuencia de siempre — beforeEach no la reemplaza
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run --spec "cypress/e2e/home.cy.js"
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+`beforeEach()` es como asegurarte de que cada vez que un cliente entra a una
+tienda, el mostrador está despejado y el local está ordenado — es preparación
+estándar. Pero no tiene nada que ver con si la tienda ya abrió sus puertas.
+Abrir las puertas (calentar el servidor) es un paso previo y distinto.
+
+**Vocabulario técnico (inglés)**
+- *hook* = gancho — función que se engancha al ciclo de vida de los tests
+- *beforeEach* = antes de cada — se ejecuta antes de cada test individual
+- *baseUrl* = URL base — dirección raíz del servidor bajo prueba
+- *refactoring* = refactorización — mejorar la estructura sin cambiar el comportamiento
+
+**Evidencia**
+- `git diff` confirmó: 4 inserciones, 5 eliminaciones, solo `home.cy.js` modificado
+- Commit: `ca51af5 test(cypress): extraer cy.visit a beforeEach y usar baseUrl`
+
+**Pendientes**
+- Mejorar selectores en `home.cy.js`
+- Agregar comando personalizado `cy.visitHome()`
+- Crear fixture para `api-consultants.cy.js`
+- Implementar Page Object Model
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
