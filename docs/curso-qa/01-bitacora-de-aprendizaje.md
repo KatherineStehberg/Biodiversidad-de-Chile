@@ -921,4 +921,91 @@ servidor devolvió un formulario con los campos correctos.
 
 ---
 
+## Sesión 11 — Módulo 5: cierre — Page Object Model e investigación de cy.intercept()
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que no todo lo que se puede automatizar conviene automatizarlo de inmediato. Si una prueba
+depende de servicios externos inestables, es mejor usar stubbing controlado o dejar el caso
+documentado como pendiente técnico. Un test flaky — que pasa a veces y falla otras — es
+peor que no tener el test: genera ruido y erosiona la confianza en la suite.
+
+**Cambios aplicados**
+
+Se creó `cypress/support/pages/HomePage.js`:
+
+```js
+const HomePage = {
+  visit() { cy.visitHome() },
+  getHero() { return cy.get('header') },
+  getCurrentUrl() { return cy.url() },
+  getPageTitle() { return cy.title() },
+  takeScreenshot() { cy.screenshot('pagina-principal') },
+}
+export default HomePage
+```
+
+Se refactorizó `cypress/e2e/ui/home.cy.js` para usar `HomePage` en lugar de comandos y
+selectores directos. No cambiaron aserciones ni nombres de tests.
+
+Se investigaron componentes `'use client'` con fetch real desde el browser:
+`BiodiversityLiveSection`, `ClimateSection`, `SeismicSection` — todos llaman a APIs
+externas (GBIF, EONET, USGS). El spy falló por timeout. Decisión: deferir a una fase
+posterior con stubbing.
+
+**Conceptos nuevos**
+- **Page Object Model:** patrón que encapsula selectores e interacciones por página.
+  Los tests importan el Page Object en lugar de hablar con el DOM directamente.
+- **Custom commands vs Page Objects:** los custom commands son globales y transversales;
+  los Page Objects son específicos de una página e importados explícitamente.
+- **`cy.intercept()` como spy:** observa tráfico real sin modificarlo. Requiere que el
+  servidor sea rápido y estable para no producir timeouts.
+- **Stub:** reemplaza la respuesta real con datos controlados. Hace el test predecible.
+- **Mock:** término general para cualquier sustitución de comportamiento real.
+- **Alias y `cy.wait()`:** `.as('nombre')` + `cy.wait('@nombre')` espera que el request
+  interceptado ocurra y reciba respuesta.
+- **Estabilidad de pruebas:** un test que depende de APIs externas es flaky por definición.
+  La solución es stubs, no timeouts más largos.
+
+**Resultado obtenido — validación final del módulo**
+
+| Spec | Tests | Passing | Failing | Duración |
+|---|---|---|---|---|
+| `api/consultants.cy.js` | 1 | 1 | 0 | 10 s |
+| `ui/home.cy.js` | 4 | 4 | 0 | 43 s |
+| **Total** | **5** | **5** | **0** | **53 s** |
+
+5/5 passing — exit code 0
+
+**Aprendizaje clave**
+No todo lo que se puede automatizar conviene automatizarlo de inmediato. Si una prueba
+depende de servicios externos inestables, es mejor usar stubbing controlado o dejar el
+caso documentado como pendiente técnico. La velocidad de avance no vale si los tests
+generan falsos negativos.
+
+**Comandos utilizados**
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Antes, el spec sabía exactamente cómo llegar a cada elemento de la página. Ahora le pregunta
+a `HomePage`: "dame el hero", "dame la URL actual". `HomePage` sabe los detalles; el spec
+solo sabe qué quiere verificar.
+
+**Vocabulario técnico (inglés)**
+- *Page Object Model* = patrón donde cada página tiene su propio objeto con métodos
+- *spy* = interceptor que observa el tráfico sin modificarlo
+- *stub* = interceptor que reemplaza la respuesta real con datos controlados
+- *flaky test* = prueba que falla intermitentemente por causas externas al código
+- *alias* = nombre asignado con `.as()` para referirse a un intercept en `cy.wait()`
+
+**Evidencia**
+- Commit: `94f2f29 test(cypress): implementar Page Object Model para Home`
+- Suite completa: 5/5 passing — exit code 0
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*

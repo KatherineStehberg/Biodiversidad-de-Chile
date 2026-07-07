@@ -707,7 +707,229 @@ Commit: `8d55bb1 test(cypress): agregar fixture de contrato para api consultants
 
 ---
 
-## Pendientes del módulo
+## Page Object Model para Home
 
-- Implementar Page Object Model para la página principal
-- Investigar qué componentes `'use client'` hacen fetch real para usar `cy.intercept()`
+### ¿Qué es Page Object Model?
+
+**Page Object Model** (POM) es un patrón de diseño para automatización de tests que
+introduce una capa de abstracción entre los tests y el DOM. Cada página tiene un "Page
+Object" — un archivo que encapsula los selectores e interacciones de esa página. Los tests
+usan el Page Object en lugar de interactuar con el DOM directamente.
+
+**¿Qué problema resuelve?**
+Cuando un selector cambia, se actualiza en un solo lugar (el Page Object) en lugar de en
+cada test que lo usa. Separa *qué verificar* (el test) de *cómo encontrar los elementos*
+(el Page Object).
+
+### Diferencia entre custom command, Page Object y selector
+
+| Concepto | Qué es | Scope |
+|---|---|---|
+| **Selector** | Expresión CSS que identifica un nodo del DOM | Ninguno — es una cadena |
+| **Custom command** | Función registrada en `cy`, disponible globalmente | Toda la suite |
+| **Page Object** | Módulo importado con métodos específicos de una página | Por spec, vía `import` |
+
+Los custom commands son para acciones transversales (`cy.visitHome()`). Los Page Objects
+encapsulan los selectores e interacciones de una página concreta.
+
+### Archivo creado: `cypress/support/pages/HomePage.js`
+
+```js
+const HomePage = {
+  visit() {
+    cy.visitHome()
+  },
+
+  getHero() {
+    return cy.get('header')
+  },
+
+  getCurrentUrl() {
+    return cy.url()
+  },
+
+  getPageTitle() {
+    return cy.title()
+  },
+
+  takeScreenshot() {
+    cy.screenshot('pagina-principal')
+  },
+}
+
+export default HomePage
+```
+
+Diseño de objeto literal (no clase). Cada método encapsula un selector o una acción.
+Los métodos que retornan elementos (`getHero`, `getCurrentUrl`, `getPageTitle`) devuelven
+el chainable de Cypress para que las aserciones puedan encadenarse directamente.
+
+### Archivo modificado: `cypress/e2e/ui/home.cy.js`
+
+**Antes:**
+
+```js
+describe('Página principal del proyecto', () => {
+  beforeEach(() => {
+    cy.visitHome()
+  })
+
+  it('Debe cargar correctamente', () => {
+    cy.get('header').should('be.visible')
+  })
+
+  it('Debe validar la URL', () => {
+    cy.url().should('include', 'localhost:3000')
+  })
+  // ...
+})
+```
+
+**Después:**
+
+```js
+import HomePage from '../../support/pages/HomePage'
+
+describe('Página principal del proyecto', () => {
+  beforeEach(() => {
+    HomePage.visit()
+  })
+
+  it('Debe cargar correctamente', () => {
+    HomePage.getHero().should('be.visible')
+  })
+
+  it('Debe validar la URL', () => {
+    HomePage.getCurrentUrl().should('include', 'localhost:3000')
+  })
+  // ...
+})
+```
+
+No cambiaron los nombres de los tests ni las aserciones. Solo cambió dónde viven los
+selectores e interacciones: pasaron del spec al Page Object.
+
+### Resultado validado — 2026-07-06
+
+4/4 passing en `ui/home.cy.js` — 56 segundos — exit code 0.
+
+Commit: `94f2f29 test(cypress): implementar Page Object Model para Home`
+
+---
+
+## Investigación de `cy.intercept()`
+
+### Componentes `'use client'` con fetch real desde el navegador
+
+Se investigaron todos los archivos de `src/` buscando llamadas `fetch()` dentro de
+`useEffect` en componentes `'use client'`. Se encontraron tres componentes presentes
+en la página principal:
+
+| Componente | Endpoint | Tipo |
+|---|---|---|
+| `BiodiversityLiveSection.tsx` | `GET /api/biodiversity` | `'use client'` + `useEffect` |
+| `ClimateSection.tsx` | `GET /api/climate`, `GET /api/weather` | `'use client'` + `useEffect` |
+| `SeismicSection.tsx` | `GET /api/earthquakes` | `'use client'` + `useEffect` |
+
+Estos son candidatos válidos para `cy.intercept()`: el fetch lo emite el **navegador**
+al montar el componente, no un Server Component.
+
+### Conceptos
+
+**Spy**
+Observa el tráfico real sin modificarlo. El request llega al servidor real y la respuesta
+vuelve al browser. `cy.intercept('GET', '/api/x').as('x')` sin un segundo argumento es un
+spy.
+
+**Stub**
+Intercepta el request y devuelve una respuesta controlada en lugar de llamar al servidor
+real. `cy.intercept('GET', '/api/x', { fixture: 'x.json' })` es un stub.
+
+**Mock**
+Término general que engloba cualquier sustitución de comportamiento real. En Cypress, "mock"
+suele referirse a un stub.
+
+**Alias y `cy.wait()`**
+`.as('nombre')` asigna un alias al intercept. `cy.wait('@nombre')` pausa el test hasta que
+ese request (y su respuesta) ocurra.
+
+```js
+cy.intercept('GET', '/api/x').as('peticion')
+cy.visit('/')
+cy.wait('@peticion').then((interception) => {
+  expect(interception.response.statusCode).to.eq(200)
+})
+```
+
+**Observar tráfico real vs simular respuesta controlada**
+
+| Spy | Stub |
+|---|---|
+| La respuesta viene del servidor real | La respuesta la define el test |
+| Útil para confirmar que la llamada ocurre | Útil para aislar el test de servicios externos |
+| Falla si el servidor es lento o no disponible | Predecible y reproducible |
+
+### Por qué no se implementó `cy.intercept()` como spy en este módulo
+
+Se intentó crear un test spy para `GET /api/biodiversity`. El test falló por timeout: la
+ruta Next.js llama a APIs externas — GBIF (`api.gbif.org`) y EONET (`eonet.gsfc.nasa.gov`)
+— cuyo tiempo de respuesta es impredecible desde un entorno local.
+
+**Decisión técnica:** no se fuerza `cy.intercept()` como spy en esta fase porque la
+prueba sería inestable (*flaky*) por causas externas al código bajo prueba.
+
+**Recomendación para una fase posterior:** implementar `cy.intercept()` con stubbing,
+usando un fixture que devuelva una respuesta controlada. Eso elimina la dependencia de
+APIs externas y hace el test determinístico.
+
+```js
+// Enfoque correcto para una fase posterior
+cy.intercept('GET', '/api/biodiversity', {
+  fixture: 'api/biodiversity-response.json'
+}).as('biodiversityRequest')
+
+cy.visitHome()
+cy.wait('@biodiversityRequest').its('response.statusCode').should('eq', 200)
+```
+
+---
+
+## Validación final del módulo — 2026-07-06
+
+**Comando:**
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run
+```
+
+| Spec | Tests | Passing | Failing | Duración |
+|---|---|---|---|---|
+| `api/consultants.cy.js` | 1 | 1 | 0 | 10 s |
+| `ui/home.cy.js` | 4 | 4 | 0 | 43 s |
+| **Total** | **5** | **5** | **0** | **53 s** |
+
+Exit code: 0
+
+---
+
+## Cierre del Módulo 5
+
+### Lo que se logró
+
+| Paso | Técnica | Archivo |
+|---|---|---|
+| A1 | Organización de specs en `ui/` y `api/` | `cypress/e2e/**` |
+| B1 | `beforeEach()` — extracción de `cy.visit` | `cypress/e2e/ui/home.cy.js` |
+| B2 | Selector robusto — `cy.get('header')` | `cypress/e2e/ui/home.cy.js` |
+| B3 | Fixture como contrato de datos | `cypress/fixtures/api/consultants-response.json` |
+| B4 | Custom command `cy.visitHome()` | `cypress/support/commands.ts` |
+| B5 | Page Object Model — `HomePage` | `cypress/support/pages/HomePage.js` |
+| B6 | Investigación de `cy.intercept()` | Documentado — pendiente técnico |
+
+### Pendientes razonables
+
+- `cy.intercept()` con stubbing usando fixtures para componentes que llaman a APIs externas
+- Agregar `data-cy` cuando la app crezca en formularios o interacciones complejas
+- Mejorar cobertura de navegación (rutas secundarias: `/marketplace`, `/consultores`)
+- Separar evidencia final consolidada para Módulo 12 — revisión y mantenimiento de la suite
