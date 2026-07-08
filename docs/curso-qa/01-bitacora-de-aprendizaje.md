@@ -1008,4 +1008,86 @@ solo sabe qué quiere verificar.
 
 ---
 
+## Sesión 12 — Módulo 6: API Testing con `cy.request()`
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que probar una API no significa comparar toda la respuesta exacta. Muchas veces es mejor
+validar el contrato mínimo: que el status sea correcto, que el body tenga las claves
+esperadas y que los tipos sean los adecuados. Un test que compara el body completo falla
+cada vez que los datos cambian, aunque el endpoint funcione perfectamente.
+
+**Conceptos aprendidos**
+
+- **Endpoint:** URL específica de una API que acepta solicitudes y devuelve respuestas.
+- **Método HTTP:** `GET`, `POST`, `PUT`, `DELETE` — cada uno con semántica distinta.
+- **Status code:** código numérico que indica el resultado: 200, 401, 404, 500, etc.
+- **Headers:** metadatos de la respuesta — no el contenido, sino información sobre el contenido.
+- **Content-Type:** header que indica el formato del body (`application/json`).
+- **Body:** contenido real de la respuesta — accesible con `response.body` en Cypress.
+- **Contrato de API:** forma mínima prometida por un endpoint — método, status, Content-Type y estructura del body.
+- **`cy.request()`:** Cypress emite la solicitud HTTP directamente, sin navegador. El test mismo es el cliente.
+- **Caso positivo:** el endpoint responde correctamente ante una solicitud válida.
+- **Caso negativo:** el endpoint rechaza correctamente ante una solicitud inválida o sin autenticación.
+- **`failOnStatusCode: false`:** permite que Cypress llegue a la assertion aunque el servidor responda 4xx o 5xx.
+- **Fixture de contrato:** archivo JSON que define las claves esperadas. No reemplaza al servidor — solo sirve de referencia de forma.
+- **Flakiness por APIs externas:** un test que depende de un servicio externo puede fallar sin cambios en el código. La solución es stubbing, no timeouts más largos.
+
+**Cambios aplicados**
+
+- Se crearon 3 nuevos specs de API:
+  - `cypress/e2e/api/climate.cy.js` — valida `/api/climate` y `/api/weather` con coordenadas fijas
+  - `cypress/e2e/api/earthquakes.cy.js` — valida `/api/earthquakes`, estructura `chile/world` y campos requeridos
+  - `cypress/e2e/api/negative-cases.cy.js` — valida 404 para ruta inexistente y 401 para endpoints protegidos sin auth
+
+- Se crearon 2 fixtures de contrato:
+  - `cypress/fixtures/api/climate-response.json`
+  - `cypress/fixtures/api/weather-response.json`
+
+- Se mantuvo `cypress/e2e/api/consultants.cy.js` sin cambios como prueba base de contrato.
+
+**Resultado obtenido**
+
+| Spec | Tests | Passing | Failing |
+|---|---|---|---|
+| `api/climate.cy.js` | 2 | 2 | 0 |
+| `api/consultants.cy.js` | 1 | 1 | 0 |
+| `api/earthquakes.cy.js` | 2 | 2 | 0 |
+| `api/negative-cases.cy.js` | 3 | 3 | 0 |
+| `ui/home.cy.js` | 4 | 4 | 0 |
+| **Total** | **12** | **12** | **0** |
+
+5 specs — 12/12 passing — exit code 0
+
+**Aprendizaje clave**
+Probar una API no significa comparar toda la respuesta exacta; muchas veces es mejor validar
+contrato mínimo, tipos, status codes y comportamiento esperado sin hacer el test frágil.
+Un test que falla cada vez que los datos cambian no protege nada — solo genera ruido.
+
+**Comandos utilizados**
+```powershell
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Probar una API es como auditar un formulario de entrega: no revisás si el nombre del destinatario
+es "Juan" o "María" — revisás que el formulario tenga campo de nombre, campo de dirección y campo
+de teléfono. Si tiene esos campos, el formulario cumple su contrato. El contenido lo pone el
+servidor; el contrato lo define el test.
+
+**Vocabulario técnico (inglés)**
+- *contract testing* = validar que una respuesta tiene la forma esperada, no el contenido exacto
+- *negative test* = test que verifica que el sistema rechaza correctamente lo que no debe aceptar
+- *status code* = código de respuesta HTTP
+- *failOnStatusCode* = opción de cy.request() para permitir respuestas 4xx/5xx sin fallar automáticamente
+- *flaky test* = test que pasa y falla intermitentemente sin cambios en el código
+
+**Evidencia**
+- Commit: `bc26e65 test(api): ampliar cobertura de pruebas API con cy.request`
+- Suite completa: 12/12 passing — exit code 0
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
