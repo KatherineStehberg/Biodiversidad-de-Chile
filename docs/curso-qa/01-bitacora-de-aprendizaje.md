@@ -1090,4 +1090,97 @@ servidor; el contrato lo define el test.
 
 ---
 
+## Sesión 13 — Módulo 7: Playwright
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que Playwright no reemplaza automáticamente a Cypress — puede coexistir como segundo runner E2E
+y aporta sintaxis `async/await`, soporte multi-browser real y traces integrados.
+Los mismos casos de prueba pueden expresarse en ambos frameworks con sintaxis diferente,
+y conocer los dos es una ventaja concreta en el mercado laboral.
+
+**Conceptos nuevos**
+
+- **Playwright:** framework de browser automation y testing E2E desarrollado por Microsoft.
+  Soporta Chromium, Firefox y WebKit desde una misma API.
+- **Browser automation:** control programático de un navegador real — navegación, clicks,
+  formularios, capturas — sin intervención humana.
+- **Test runner:** herramienta que descubre, ejecuta y reporta los resultados de un conjunto
+  de tests. Playwright y Cypress son ejemplos de test runners E2E.
+- **`page.goto()`:** navega a una URL. Equivalente a `cy.visit('/')`.
+- **`page.locator()`:** referencia a un elemento del DOM. Equivalente a `cy.get()`.
+  Es lazy — no interactúa con el DOM hasta que se ejecuta una acción o assertion.
+- **`expect()`:** función de assertion de Playwright. Equivalente a `.should()` de Cypress.
+- **`async/await`:** modelo de JavaScript para manejar operaciones asincrónicas. En Playwright,
+  cada interacción con el browser requiere `await` explícito.
+- **Chromium:** motor de browser open source en el que se basan Chrome y Edge. En este módulo
+  es el único browser instalado para Playwright.
+- **Trace:** archivo ZIP que Playwright genera cuando un test falla. Registra cada acción,
+  llamada de red y screenshot del test. Se visualiza con `npx playwright show-trace`.
+- **Comparación Cypress vs Playwright:** mismos casos de prueba, sintaxis distinta. Cypress
+  encola las operaciones internamente; Playwright expone `async/await` directamente.
+
+**Cambios aplicados**
+
+- Se instaló `@playwright/test` con `npm install -D @playwright/test`
+- Se instaló Chromium con `npx playwright install chromium`
+- Se creó `playwright.config.ts` — testDir `./tests/playwright`, baseURL `http://localhost:3000`, Chromium headless
+- Se creó `tests/playwright/home.spec.js` — 3 tests sobre la página principal
+- Se ignoraron artefactos `test-results/` y `playwright-report/` en `.gitignore`
+
+**Resultado obtenido**
+
+| Runner | Specs | Tests | Passing | Failing | Exit code |
+|---|---|---|---|---|---|
+| Playwright | 1 | 3 | 3 | 0 | 0 |
+| Cypress | 5 | 12 | 12 | 0 | 0 |
+
+**Aprendizaje clave**
+Playwright no reemplaza automáticamente a Cypress; puede coexistir como segundo runner E2E
+y aporta sintaxis `async/await`, soporte multi-browser real (incluyendo WebKit/Safari)
+y traces integrados. Conocer ambas herramientas amplía el perfil profesional en QA.
+
+**Comandos utilizados**
+```powershell
+# Instalación
+npm install -D @playwright/test
+npx playwright install chromium
+
+# Ejecución de Playwright
+npx playwright test
+
+# Confirmación de Cypress sin regresiones
+[System.Environment]::SetEnvironmentVariable("ELECTRON_RUN_AS_NODE", $null, [System.EnvironmentVariableTarget]::Process)
+npx cypress run
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Cypress y Playwright son como dos cocineros que preparan el mismo plato con técnicas distintas.
+Cypress te guía paso a paso y gestiona los tiempos internamente — vos le decís qué hacer y él
+se encarga del cuándo. Playwright es más explícito: cada paso requiere que vos confirmes
+que terminó (`await`) antes de pasar al siguiente. El resultado en el plato es idéntico;
+la experiencia de cocinar es diferente.
+
+**Vocabulario técnico (inglés)**
+- *browser automation* = control programático de un navegador real
+- *test runner* = herramienta que ejecuta y reporta resultados de tests
+- *locator* = referencia a un elemento del DOM en Playwright
+- *async/await* = modelo para operaciones asincrónicas en JavaScript
+- *headless* = sin interfaz gráfica visible — el browser corre en segundo plano
+- *trace* = registro completo de una ejecución de test para debugging
+
+**Evidencia**
+- Commit técnico: `b44f3e9 test(playwright): instalar Playwright y agregar spec inicial de homepage`
+- Commit artefactos: `74c6275 chore(playwright): ignorar artefactos de ejecucion`
+- Playwright: 3/3 passing — exit code 0
+- Cypress post-instalación: 12/12 passing — exit code 0
+
+**Pendientes**
+- Agregar `page.route()` con stubbing para APIs externas
+- Spec de navegación para páginas internas (`/marketplace`, `/consultores`)
+- Cobertura multi-navegador con Firefox y WebKit
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
