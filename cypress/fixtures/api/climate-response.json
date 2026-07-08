@@ -1,0 +1,13 @@
+{
+  "co2": {
+    "value": "",
+    "year": "",
+    "month": "",
+    "abovePreIndustrial": ""
+  },
+  "temperature": {
+    "anomaly": "",
+    "year": "",
+    "trend10y": ""
+  }
+}

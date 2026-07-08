@@ -1,0 +1,9 @@
+{
+  "temperature": 0,
+  "humidity": 0,
+  "windSpeed": 0,
+  "condition": "",
+  "icon": "",
+  "city": "",
+  "country": ""
+}
