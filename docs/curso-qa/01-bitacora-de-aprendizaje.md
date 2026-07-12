@@ -1183,4 +1183,79 @@ la experiencia de cocinar es diferente.
 
 ---
 
+## Sesión 14 — Módulo 8: Cucumber BDD
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que BDD no reemplaza Cypress ni Playwright — agrega una capa de lenguaje de negocio que
+permite expresar requisitos como escenarios ejecutables. Los mismos steps que alguien de
+negocio puede leer (`Given el usuario abre la página principal`) se convierten en
+automatización real gracias a las step definitions.
+
+**Conceptos aprendidos**
+
+- **BDD:** Behavior-Driven Development — enfoque que describe el comportamiento esperado del
+  sistema con lenguaje entendible por negocio y tecnología.
+- **Gherkin:** sintaxis estructurada con `Feature`, `Scenario`, `Given`, `When`, `Then` y `And`.
+- **Feature:** funcionalidad o grupo de comportamientos descritos en un archivo `.feature`.
+- **Scenario:** caso concreto dentro de una Feature — un comportamiento específico a probar.
+- **Given:** contexto inicial del escenario.
+- **When:** acción del usuario o del sistema.
+- **Then:** resultado esperado después de la acción.
+- **And:** continuación lógica de `Given`, `When` o `Then`.
+- **Step Definition:** código que conecta una frase Gherkin con una acción automatizada.
+- **Documentación viva:** los archivos `.feature` son documentación legible Y pruebas ejecutables al mismo tiempo.
+- **`browser.newContext()`:** crea un contexto de navegación aislado en Playwright, con viewport
+  definido. Necesario fuera del test runner de Playwright para garantizar renderizado correcto.
+
+**Cambios aplicados**
+
+- Se instaló `@cucumber/cucumber 13.0.0` como devDependency
+- Se creó `cucumber.json` con paths a `features/` y `require` a step-definitions
+- Se creó `features/home.feature` con 1 escenario BDD: cargar la página principal
+- Se creó `features/step-definitions/home.steps.js` con `Before`/`After`, `setDefaultTimeout(60s)` y steps usando Playwright
+- Se agregó el script `"cucumber": "cucumber-js"` en `package.json`
+
+**Resultado obtenido**
+
+| Runner | Resultado | Detalle |
+|---|---|---|
+| Cucumber | ✅ | 1 scenario passing, 5 steps (incluyendo hooks), exit code 0 |
+| Playwright | ✅ | 3/3 passing, exit code 0 |
+| Cypress | ✅ | 12/12 passing, 5 specs, exit code 0 |
+
+**Aprendizaje clave**
+BDD no reemplaza Cypress ni Playwright; agrega una capa de lenguaje de negocio que permite
+expresar requisitos como escenarios ejecutables. Un archivo `.feature` puede ser leído por
+alguien sin conocimiento técnico y ejecutado sin modificaciones por Cucumber. Esa doble
+utilidad — documentación y prueba — es el valor central de BDD.
+
+**Comandos utilizados**
+```bash
+npm install -D @cucumber/cucumber
+npx cucumber-js
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Antes, los tests estaban escritos en lenguaje de programación — solo alguien con
+conocimiento técnico podía entender qué se estaba probando. Con BDD y Gherkin, el
+escenario dice en palabras normales qué hace el usuario y qué debe pasar. Detrás de cada
+frase hay código que lo ejecuta, pero la frase misma es documentación.
+
+**Vocabulario técnico (inglés)**
+- *BDD* = Behavior-Driven Development — desarrollo guiado por comportamiento
+- *Gherkin* = lenguaje de escenarios BDD legible por humanos
+- *feature file* = archivo `.feature` que contiene escenarios en Gherkin
+- *step definition* = función que conecta una frase Gherkin con código de automatización
+- *living documentation* = documentación viva — especificación que también es ejecutable
+
+**Evidencia**
+- Commit técnico: `5ee000d test(bdd): instalar Cucumber y agregar primer escenario BDD con Playwright`
+- Cucumber: 1 scenario passing — exit code 0
+- Playwright: 3/3 passing — exit code 0
+- Cypress: 12/12 passing — exit code 0
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
