@@ -3,9 +3,34 @@
 
 ---
 
+## Cronología del curso
+
+Fechas verificadas contra el historial de commits del repositorio.
+La Sesión 1 no tiene commit asociado (trabajo exploratorio previo al primer commit documentado).
+
+| Sesión | Módulo | Tema | Fecha verificada | Commits asociados |
+|---|---|---|---|---|
+| 1 | Auditoría inicial | Inventario del proyecto | 2026-07-04 (sin commit) | — |
+| 2 | Estabilización | Entorno, dev, build | 2026-07-05 | `68931ca` |
+| 3 | M4 — Cypress básico | Análisis home.cy.js y diagnóstico QA-005 | 2026-07-05 | `fd1a24c` `a4e26e1` `132b84f` |
+| 4 | M4 — Cypress básico | Diagnóstico ESOCKETTIMEDOUT / JIT | 2026-07-05 | `132b84f` |
+| 5 | M4 — Cypress básico | Reemplazo api-usuarios por API real | 2026-07-06 | `902a11b` `88cff02` |
+| 6 | M5 — Cypress avanzado | `beforeEach()` y `baseUrl` | 2026-07-06 | `ca51af5` `83c35f2` |
+| 7 | M5 — Cypress avanzado | Organización specs en `ui/` y `api/` | 2026-07-06 | `47d9931` `40064f8` |
+| 8 | M5 — Cypress avanzado | Custom command `cy.visitHome()` | 2026-07-06 | `06d551d` `e7aa7ce` |
+| 9 | M5 — Cypress avanzado | Selectores robustos (`header`) | 2026-07-06 | `0c610c2` `a6a7123` |
+| 10 | M5 — Cypress avanzado | Fixture como contrato de datos | 2026-07-06 | `8d55bb1` `f3e41ba` |
+| 11 | M5 — Cypress avanzado | Page Object Model + cierre | 2026-07-06 | `94f2f29` `39630ac` |
+| 12 | M6 — API Testing | `cy.request()` y casos negativos | 2026-07-08 | `bc26e65` `6f9c336` |
+| 13 | M7 — Playwright | Instalación y spec inicial | 2026-07-08 | `b44f3e9` `74c6275` `7b23c23` |
+| 14 | M8 — Cucumber BDD | Gherkin, features, step definitions | 2026-07-11 | `5ee000d` `1aabeae` |
+| 15 | M9 — Mobile Testing | Playwright devices, iPhone 12 | 2026-07-11 | `e6a05f9` `65236cd` |
+
+---
+
 ## Sesión 1 — Auditoría inicial del proyecto
 
-**Fecha:** 2026-07-04
+**Fecha:** 2026-07-04 *(trabajo exploratorio — sin commit asociado a esta fecha; primer commit documentado: `68931ca` del 2026-07-05)*
 
 **¿Qué aprendimos?**
 Que un proyecto puede estar funcionando correctamente y tener cero cobertura
@@ -1010,7 +1035,7 @@ solo sabe qué quiere verificar.
 
 ## Sesión 12 — Módulo 6: API Testing con `cy.request()`
 
-**Fecha:** 2026-07-06
+**Fecha:** 2026-07-08 *(verificada: `bc26e65` `6f9c336`)*
 
 **¿Qué aprendimos?**
 Que probar una API no significa comparar toda la respuesta exacta. Muchas veces es mejor
@@ -1092,7 +1117,7 @@ servidor; el contrato lo define el test.
 
 ## Sesión 13 — Módulo 7: Playwright
 
-**Fecha:** 2026-07-06
+**Fecha:** 2026-07-08 *(verificada: `b44f3e9` `74c6275` `7b23c23`)*
 
 **¿Qué aprendimos?**
 Que Playwright no reemplaza automáticamente a Cypress — puede coexistir como segundo runner E2E
@@ -1185,7 +1210,7 @@ la experiencia de cocinar es diferente.
 
 ## Sesión 14 — Módulo 8: Cucumber BDD
 
-**Fecha:** 2026-07-06
+**Fecha:** 2026-07-11 *(verificada: `5ee000d` `1aabeae`)*
 
 **¿Qué aprendimos?**
 Que BDD no reemplaza Cypress ni Playwright — agrega una capa de lenguaje de negocio que
@@ -1260,7 +1285,7 @@ frase hay código que lo ejecuta, pero la frase misma es documentación.
 
 ## Sesión 15 — Módulo 9: Mobile Testing
 
-**Fecha:** 2026-07-06
+**Fecha:** 2026-07-11 *(verificada: `e6a05f9` `65236cd`)*
 
 **¿Qué aprendimos?**
 Que mobile testing no significa instalar Appium siempre. Primero se debe identificar si
