@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cucumber": "cucumber-js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,6 +25,7 @@
     "react-icons": "^5.5.0"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^13.0.0",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
