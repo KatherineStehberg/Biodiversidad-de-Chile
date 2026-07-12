@@ -1258,4 +1258,92 @@ frase hay código que lo ejecuta, pero la frase misma es documentación.
 
 ---
 
+## Sesión 15 — Módulo 9: Mobile Testing
+
+**Fecha:** 2026-07-06
+
+**¿Qué aprendimos?**
+Que mobile testing no significa instalar Appium siempre. Primero se debe identificar si
+existe una app móvil real. Si el proyecto es web, una estrategia correcta es mobile web
+testing con emulación de dispositivos — más rápida de implementar y sin dependencias de
+entorno pesadas como JDK o Android SDK.
+
+**Conceptos aprendidos**
+
+- **Appium:** herramienta open source para automatizar apps nativas, híbridas y web mobile
+  en Android/iOS. Requiere JDK, Android SDK, emulador/dispositivo real y APK o IPA.
+- **Detox:** framework E2E para React Native con sincronización automática con el ciclo
+  de vida de la app. Solo aplica a proyectos React Native.
+- **Mobile web testing:** pruebas sobre una app web vista desde viewport y user agent móvil.
+  No requiere app de tienda — es la web en un browser móvil.
+- **App nativa:** compilada para Android o iOS. Accede a APIs del SO.
+- **App híbrida:** WebView dentro de un contenedor nativo (Ionic, Capacitor, Cordova).
+- **Web móvil:** sitio web responsive abierto desde browser móvil.
+- **Emulador:** entorno virtual Android. Requiere Android Studio y Android SDK.
+- **Dispositivo real:** hardware físico. Más fiel, más difícil de integrar en CI/CD.
+- **accessibilityId / testID:** atributos estables para localizar elementos en pruebas
+  móviles. Equivalente al `data-cy` de Cypress en el ecosistema mobile.
+- **Responsive testing:** validación de que la interfaz se adapta a distintas resoluciones
+  sin overflow ni superposición de elementos.
+- **Playwright devices:** descriptores de dispositivos incluidos en `@playwright/test` que
+  configuran viewport, user agent, deviceScaleFactor e `isMobile` para emulación mobile.
+
+**Cambio aplicado**
+
+- Se auditó el proyecto y se confirmó que es web Next.js — sin `android/`, `ios/`,
+  React Native, Expo, Ionic, APK ni IPA.
+- Se auditó el entorno Android — sin JDK, Android SDK, adb ni emulador disponibles.
+- Se decidió no instalar Appium — no hay target real de ejecución.
+- Se creó `tests/playwright/mobile-home.spec.js` con emulación iPhone 12 en Chromium.
+- Se excluyó `defaultBrowserType: 'webkit'` del descriptor de iPhone 12 para compatibilidad
+  con Chromium (único browser instalado).
+- Se extendió el timeout a 60s para absorber compilación JIT de Next.js en mobile.
+- Se validó: carga de Home, header visible, título no vacío, sin scroll horizontal, URL.
+
+**Resultado obtenido**
+
+| Runner | Resultado | Detalle |
+|---|---|---|
+| Playwright mobile | ✅ | 4/4 passing, exit code 0 |
+| Playwright completo | ✅ | 7/7 passing (3 desktop + 4 mobile), exit code 0 |
+| Cypress | ✅ | 12/12 passing, 5 specs, exit code 0 |
+| Cucumber | ✅ | 1 scenario / 5 steps passing, exit code 0 |
+
+**Aprendizaje clave**
+Mobile testing no significa instalar Appium siempre. Primero se debe identificar si existe
+app móvil real. Si el proyecto es web, la estrategia correcta es mobile web testing con
+emulación de dispositivos: más rápida de implementar, sin dependencias de entorno pesadas,
+y con evidencia de prueba inmediata.
+
+**Comandos utilizados**
+```bash
+npx playwright test tests/playwright/mobile-home.spec.js
+npx playwright test
+npx cypress run
+npx cucumber-js
+```
+
+**¿Cómo lo explicaría una persona principiante?**
+Antes de comprar una cámara de seguridad para el jardín, primero hay que verificar si la casa
+tiene jardín. Si el proyecto no tiene app móvil, instalar Appium es como comprar la cámara
+sin jardín. Lo que sí se puede hacer es verificar que la ventana de la casa (la web) se vea
+bien desde distintos tamaños de pantalla — eso es mobile web testing.
+
+**Vocabulario técnico (inglés)**
+- *Appium* = herramienta WebDriver para apps móviles nativas e híbridas
+- *Detox* = framework E2E para React Native con sincronización automática
+- *device emulation* = emulación de dispositivo — viewport, UA y touch simulados
+- *responsive testing* = validación de adaptación a distintas resoluciones
+- *native app* = app compilada para iOS/Android
+- *hybrid app* = app con WebView dentro de contenedor nativo
+
+**Evidencia**
+- Commit técnico: `e6a05f9 test(mobile): agregar spec Playwright con emulación móvil iPhone 12`
+- Playwright mobile: 4/4 passing — exit code 0
+- Playwright completo: 7/7 passing — exit code 0
+- Cypress: 12/12 passing — exit code 0
+- Cucumber: 1 scenario passing — exit code 0
+
+---
+
 *Se agregarán nuevas sesiones a medida que avance el curso.*
