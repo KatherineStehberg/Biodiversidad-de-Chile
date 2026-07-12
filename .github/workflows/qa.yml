@@ -10,6 +10,13 @@ jobs:
   qa:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_USE_MOCK_DATA: "true"
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-mock-anon-key"
+      NEXTAUTH_SECRET: "ci-mock-nextauth-secret"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
 
     steps:
       - name: Checkout
@@ -62,6 +69,7 @@ jobs:
           name: playwright-test-results
           path: test-results/
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Subir reporte Playwright si existe
         if: failure()
@@ -70,6 +78,7 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Subir capturas Cypress si falla
         if: failure()
@@ -78,6 +87,7 @@ jobs:
           name: cypress-screenshots
           path: cypress/screenshots/
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Subir videos Cypress si falla
         if: failure()
@@ -86,6 +96,7 @@ jobs:
           name: cypress-videos
           path: cypress/videos/
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Cerrar servidor
         if: always()
