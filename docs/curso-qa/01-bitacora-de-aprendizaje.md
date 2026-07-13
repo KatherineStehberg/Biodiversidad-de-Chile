@@ -26,6 +26,7 @@ La Sesión 1 no tiene commit asociado (trabajo exploratorio previo al primer com
 | 14 | M8 — Cucumber BDD | Gherkin, features, step definitions | 2026-07-11 | `5ee000d` `1aabeae` |
 | 15 | M9 — Mobile Testing | Playwright devices, iPhone 12 | 2026-07-11 | `e6a05f9` `65236cd` |
 | 16 | M10 — CI/CD | GitHub Actions, workflow QA automatizado | 2026-07-12 | `56008cc` `df92c50` `788c700` |
+| 17 | M11 — Docker / Cloud | Dockerfile standalone, .dockerignore, output standalone | 2026-07-12 | `8c9a1f4` |
 
 ---
 
@@ -1476,5 +1477,69 @@ no a un bug en el código.
 - `pkill -f "next" || true` — cierre limpio del servidor
 
 **Estado del módulo:** logrado — ✅ validado en GitHub Actions
+
+---
+
+## Sesión 17 — Módulo 11: Docker / Cloud
+
+**Fecha:** 2026-07-12
+
+**¿Qué aprendimos?**
+Que Docker resuelve el problema de "en mi máquina funciona" porque el contenedor
+incluye el sistema operativo mínimo, la versión de Node.js, las dependencias y la
+configuración — todo junto. Si el contenedor funciona en desarrollo, funciona igual
+en producción, porque ambos ejecutan exactamente lo mismo.
+
+También aprendimos que `output: 'standalone'` en Next.js es la pieza que conecta
+el framework con Docker: genera una salida mínima que puede ejecutarse con un
+simple `node server.js`, sin npm ni Next.js instalados globalmente.
+
+**Objetivo del módulo**
+Preparar el proyecto Next.js para ejecución en contenedor, activando
+`output: 'standalone'` en `next.config.ts` y creando un `Dockerfile` multi-stage
+con Node.js 22 Alpine.
+
+**Auditoría inicial**
+El proyecto no tenía ningún archivo Docker ni configuración cloud específica.
+El deployment planificado es VPS/Coolify, que usa Docker internamente — el
+`Dockerfile` creado es directamente útil para el deploy real del proyecto.
+
+**Archivos creados/modificados**
+
+| Archivo | Cambio |
+|---|---|
+| `next.config.ts` | Agregado `output: 'standalone'` — imagen Docker más liviana |
+| `.dockerignore` | Nuevo — excluye `node_modules`, `.next`, `.env*`, artefactos de tests |
+| `Dockerfile` | Nuevo — multi-stage: `deps` + `builder` + `runner` con Node.js 22 Alpine |
+
+**Decisión `output: 'standalone'`**
+Genera `.next/standalone/` con solo las dependencias mínimas para el servidor.
+Reduce el tamaño de la imagen final de ~600 MB a ~150 MB. El servidor arranca
+con `node server.js` — sin npm. Es la configuración estándar para Next.js con
+Docker y Coolify.
+
+**Variables mock en Docker**
+Misma estrategia que en CI (Módulo 10): variables dummy no sensibles que permiten
+que `createClient()` de Supabase inicialice sin error, con `NEXT_PUBLIC_USE_MOCK_DATA=true`
+para activar el cliente mock. Sin Supabase real, es la única opción disponible.
+
+**Docker build local — pendiente**
+Docker CLI (v29.1.3) estaba instalado y Docker Desktop estaba abierto, pero el
+daemon no expuso el pipe correctamente:
+
+```
+open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+```
+
+Este error es del entorno Docker Desktop / WSL2, no del Dockerfile ni del proyecto.
+Los archivos son estructuralmente correctos. La validación local queda pendiente.
+
+**Commit del módulo**
+
+| Commit | Descripción |
+|---|---|
+| `8c9a1f4` | `ci(docker): agregar Dockerfile standalone para Next.js` |
+
+**Estado del módulo:** preparado / pendiente de validación local Docker
 
 *Se agregarán nuevas sesiones a medida que avance el curso.*
