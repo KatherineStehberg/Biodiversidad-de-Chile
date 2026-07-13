@@ -25,6 +25,7 @@ La Sesión 1 no tiene commit asociado (trabajo exploratorio previo al primer com
 | 13 | M7 — Playwright | Instalación y spec inicial | 2026-07-08 | `b44f3e9` `74c6275` `7b23c23` |
 | 14 | M8 — Cucumber BDD | Gherkin, features, step definitions | 2026-07-11 | `5ee000d` `1aabeae` |
 | 15 | M9 — Mobile Testing | Playwright devices, iPhone 12 | 2026-07-11 | `e6a05f9` `65236cd` |
+| 16 | M10 — CI/CD | GitHub Actions, workflow QA automatizado | 2026-07-12 | `56008cc` `df92c50` `788c700` |
 
 ---
 
@@ -1370,5 +1371,110 @@ bien desde distintos tamaños de pantalla — eso es mobile web testing.
 - Cucumber: 1 scenario passing — exit code 0
 
 ---
+
+---
+
+## Sesión 16 — Módulo 10: CI/CD con GitHub Actions
+
+**Fecha:** 2026-07-12 *(verificada: `56008cc` `df92c50` `788c700`)*
+
+**¿Qué aprendimos?**
+Que un pipeline CI/CD es la diferencia entre "los tests pasan en mi máquina" y "los tests
+pasan en cualquier máquina, automáticamente, en cada push". También aprendimos que el entorno
+CI no hereda nada del entorno local — ni variables de entorno, ni archivos `.env`, ni
+dependencias del sistema operativo. Cada suposición sobre el entorno debe estar explícita en el workflow.
+
+**Objetivo del módulo**
+Crear un workflow GitHub Actions que ejecute automáticamente build, Playwright, Cypress
+y Cucumber en cada push sobre `qa-automation-course`.
+
+**Archivo creado**
+`.github/workflows/qa.yml` — pipeline QA con 15 steps:
+checkout → setup-node → npm ci → install Chromium → build → start server → wait →
+Playwright → Cypress → Cucumber → upload artifacts → close server.
+
+**Commits del módulo**
+
+| Commit | Descripción |
+|---|---|
+| `56008cc` | `test(playwright): ampliar timeout de assertions a 15000ms` |
+| `df92c50` | `ci(qa): agregar workflow GitHub Actions para pruebas automatizadas` |
+| `788c700` | `ci(qa): usar variables mock para workflow sin Supabase` |
+
+**Estabilización previa — `56008cc`**
+
+Antes de crear el workflow, se detectó que `tests/playwright/home.spec.js` fallaba
+intermitentemente con el timeout de assertions por defecto (5000ms). En CI frío,
+sin caché, Next.js tarda más en renderizar elementos.
+
+Solución: agregar `expect: { timeout: 15000 }` en `playwright.config.ts`. Un solo cambio
+de configuración — sin modificar ningún test — estabilizó la suite completa: 7/7 passing.
+
+**Primer fallo del workflow — `df92c50`**
+
+El primer run falló en el step **Build**:
+
+```
+Error: supabaseUrl is required.
+Failed to collect page data for /api/consultants
+Process completed with exit code 1.
+```
+
+Causa: `src/lib/supabase.ts` ejecuta `createClient()` al importarse el módulo, antes de
+cualquier lógica condicional. En CI, `NEXT_PUBLIC_SUPABASE_URL` era `undefined` porque
+GitHub Actions no tiene acceso a `.env.local`. Incluso con `NEXT_PUBLIC_USE_MOCK_DATA=true`,
+el crash ocurre antes de que el condicional de mock se evalúe.
+
+**Corrección — `788c700`**
+
+No se creó Supabase real. No se crearon GitHub Secrets. No se subió `.env.local`.
+
+Se agregó un bloque `env:` en el workflow con variables dummy no sensibles:
+
+```yaml
+env:
+  NEXT_PUBLIC_USE_MOCK_DATA: "true"
+  NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-mock-anon-key"
+  NEXTAUTH_SECRET: "ci-mock-nextauth-secret"
+  NEXTAUTH_URL: "http://localhost:3000"
+  NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+```
+
+Estas variables permiten que `createClient()` inicialice sin error. Con `USE_MOCK_DATA=true`,
+el cliente mock intercepta todas las llamadas — ningún test intenta conectarse a Supabase real.
+
+**Resultado final — segundo run**
+
+| Suite | Resultado |
+|---|---|
+| Build | ✅ pass |
+| Playwright | ✅ 7/7 passing |
+| Cypress | ✅ 12/12 passing |
+| Cucumber | ✅ 1 scenario / 5 steps passing |
+| GitHub Actions | ✅ passing |
+
+**Aprendizaje principal**
+El entorno CI es una máquina vacía. No tiene `.env.local`, no tiene el servidor corriendo,
+no tiene las librerías del SO que Chromium necesita, no tiene variables de entorno del proyecto.
+Todo lo que el workflow necesita debe declararse explícitamente en el YAML — o el pipeline
+fallará de formas que localmente nunca ocurren.
+
+Un fallo en CI que no ocurre localmente casi siempre apunta a una diferencia de entorno,
+no a un bug en el código.
+
+**Herramientas y comandos usados**
+- `.github/workflows/qa.yml` — workflow YAML de GitHub Actions
+- `actions/checkout@v4` — clona el repositorio en el runner
+- `actions/setup-node@v4` — instala Node.js 22 con caché npm
+- `npm ci` — instalación reproducible desde `package-lock.json`
+- `npx playwright install chromium --with-deps` — instala Chromium con dependencias Linux
+- `npm run build` — compila Next.js antes de levantar el servidor
+- `npm run start &` — servidor de producción en background
+- Loop `curl` — espera hasta 90s a que `localhost:3000` responda
+- `actions/upload-artifact@v4` — sube evidencia de fallos
+- `pkill -f "next" || true` — cierre limpio del servidor
+
+**Estado del módulo:** logrado — ✅ validado en GitHub Actions
 
 *Se agregarán nuevas sesiones a medida que avance el curso.*
