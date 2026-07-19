@@ -11,6 +11,7 @@
 | Severidad | Alta |
 | Prioridad | Alta |
 | Estado | **Resuelto — workaround aplicado** |
+| Última verificación de vigencia | 2026-07-18 — workaround confirmado como necesario (ver sección "Verificación de vigencia") |
 
 ---
 
@@ -164,6 +165,33 @@ Este patrón debe aplicarse en **cada ejecución de Cypress** desde la terminal
 integrada de VSCode o desde Claude Code. Si se aplica en un proceso y Cypress
 se ejecuta en otro proceso diferente, la variable reaparece y el error vuelve
 a ocurrir.
+
+### Verificación de vigencia — 2026-07-18
+
+El workaround se volvió a poner a prueba de forma comparativa antes de decidir
+si eliminarlo, en el marco del sprint de estabilización QA (QA-004/005/002/003).
+
+**Entorno verificado:** Node `v18.20.4` · npm `10.7.0` · Cypress package/binary
+`15.17.0` · Electron `37.6.0` · Windows 10 Pro 10.0.19045.
+
+| Escenario | Estado de `ELECTRON_RUN_AS_NODE` | Comando exacto | Resultado |
+|---|---|---|---|
+| A | Presente en el proceso (`=1`, workaround **no** aplicado) | `npx cypress verify` | Error: `Cypress.exe: bad option: --smoke-test` / `bad option: --ping=N` → `Cypress failed to start.` (exit 1). Con `npx cypress run --spec "cypress/e2e/api/climate.cy.js"` el fallo es más severo: crash del proceso (`STATUS_ILLEGAL_INSTRUCTION`, exit `-1073741795`), sin output. |
+| B | Eliminada del proceso (workaround aplicado vía API .NET) | `npx cypress verify` | Éxito: `√ Verified Cypress!`. Con `npx cypress run --spec "cypress/e2e/api/climate.cy.js"`: Cypress arranca correctamente y llega a verificar `baseUrl`; falla únicamente porque el servidor dev no estaba levantado (`Cypress failed to verify that your server is running` — causa externa y distinta, no relacionada con `ELECTRON_RUN_AS_NODE`). |
+
+El fallo de `baseUrl` en el Escenario B ocurre **después** del arranque correcto
+del binario de Cypress — es una condición posterior y distinta al problema que
+resuelve este workaround.
+
+**Conclusión:** `ELECTRON_RUN_AS_NODE` sigue siendo necesario en este entorno.
+No se modificó ningún archivo durante este diagnóstico.
+
+> **No eliminar este workaround sin repetir esta prueba comparativa**
+> (Escenario A vs. Escenario B) en el entorno donde se vaya a retirar. El
+> síntoma que resuelve — `Cypress.exe` arrancando como proceso Node en vez de
+> Electron por herencia de `ELECTRON_RUN_AS_NODE=1` del proceso padre — depende
+> del entorno de ejecución (VSCode/Claude Code), no del código del proyecto, y
+> puede persistir o desaparecer según cómo cambie ese entorno.
 
 ### Secuencia de ejecución reproducible propuesta
 
