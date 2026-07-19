@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import UserAvatar from '../ui/UserAvatar';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface UserIdentity {
   identity_data?: {
@@ -46,7 +46,7 @@ export default function UserMenu() {
         }
       }
     })();
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, newSession: Session | null) => {
       setSession(newSession);
       // Limpiar avatar al cerrar sesión
       if (!newSession) setCustomAvatar(null);

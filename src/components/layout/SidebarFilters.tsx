@@ -172,7 +172,7 @@ const SidebarFilters = () => {
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       setSession(data.session)
       setLoadingSession(false)
     }).catch(() => setLoadingSession(false))

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import type { Session } from '@supabase/supabase-js'
 import Link from 'next/link'
 
 export default function ResetPasswordPage() {
@@ -15,7 +16,7 @@ export default function ResetPasswordPage() {
   const [hasSession, setHasSession] = useState<boolean | null>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       setHasSession(!!data.session)
     }).catch(() => setHasSession(false))
   }, [])
