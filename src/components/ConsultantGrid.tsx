@@ -4,19 +4,19 @@ import ConsultantCard from './ui/ConsultantCard';
 import { useState, useEffect } from 'react';
 import ConsultantSidePanel from './ConsultantSidePanel';
 import { supabase } from '@/lib/supabase';
+import type { ConsultantSummary } from '@/types/consultant';
 
-interface ConsultantItem {
-  id: string;
-  image?: string;
-  name: string;
-  specialty?: string;
-  email?: string;
-  bio?: string;
-  [key: string]: string | undefined; // Allow additional string properties
-}
+type UsuarioRef = { imagen_perfil: string | null; name: string };
 
-export default function ConsultantGrid({ items }: { items?: ConsultantItem[] }) {
-  const [consultants, setConsultants] = useState<ConsultantItem[]>([]);
+type ConsultorRow = {
+  id: string | number;
+  especialidad?: string | null;
+  experiencia?: string | null;
+  usuarios: UsuarioRef | UsuarioRef[];
+};
+
+export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] }) {
+  const [consultants, setConsultants] = useState<ConsultantSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,8 +42,8 @@ export default function ConsultantGrid({ items }: { items?: ConsultantItem[] }) 
           // Fallback to sample data if there's an error
           setConsultants(items || []);
         } else {
-          // Transform the data to match the ConsultantItem interface
-          const transformedConsultants = data.map(consultant => {
+          // Transform the data to match the ConsultantSummary contract
+          const transformedConsultants = data.map((consultant: ConsultorRow) => {
             // Manejo seguro de la relación anidada (puede venir como objeto o array)
             const usuario = Array.isArray(consultant.usuarios)
               ? consultant.usuarios[0]
