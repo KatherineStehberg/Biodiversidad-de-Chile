@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:cypress": "cypress run",
+    "test:playwright": "playwright test",
+    "test:cucumber": "cucumber-js",
     "cucumber": "cucumber-js"
   },
   "dependencies": {
