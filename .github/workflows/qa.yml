@@ -48,7 +48,18 @@ jobs:
         run: npm run typecheck
 
       - name: Validate ESLint
-        run: npm run lint
+        run: |
+          set -o pipefail
+          npm run lint 2>&1 | tee /tmp/biodiversidad-eslint.log
+
+      - name: Upload ESLint log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-log
+          path: /tmp/biodiversidad-eslint.log
+          retention-days: 7
+          if-no-files-found: error
 
   browser-and-api-tests:
     name: Playwright, Cypress and Cucumber
