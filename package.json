@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run --e2e",
+    "test:e2e": "cypress run --e2e"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
