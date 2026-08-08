@@ -5,6 +5,7 @@ const iPhone = devices['iPhone 12']
 // devices['iPhone 12'] incluye defaultBrowserType: 'webkit', que no está instalado.
 // Se aplican solo las propiedades de viewport/UA para emulación en Chromium.
 const { defaultBrowserType: _unused, ...iPhoneOptions } = iPhone
+void _unused
 
 test.use({
   ...iPhoneOptions,
