@@ -119,7 +119,7 @@ export default function ProfileForm({ editing: editingProp, onEditingChange }: P
         const errorData = await res.json().catch(() => ({ error: 'Error al guardar' }))
         setMessage(errorData.error || 'Error al guardar')
       }
-    } catch (err) {
+    } catch {
       setMessage('Error de red')
     } finally {
       setIsSaving(false)
@@ -170,7 +170,7 @@ export default function ProfileForm({ editing: editingProp, onEditingChange }: P
         const j = await res.json().catch(() => null)
         setMessage(j?.error || 'Error al subir avatar')
       }
-    } catch (err) {
+    } catch {
       setMessage('Error de red al subir avatar')
     } finally {
       setUploading(false)
@@ -277,7 +277,7 @@ export default function ProfileForm({ editing: editingProp, onEditingChange }: P
           <option value="consultant">Consultor</option>
         </select>
         <p className="text-xs text-gray-400 mt-1">
-          Si eliges "Consultor", aparecerás en la red de profesionales y podrás ofrecer servicios.
+          Si eliges &quot;Consultor&quot;, aparecerás en la red de profesionales y podrás ofrecer servicios.
         </p>
       </div>
 
@@ -303,4 +303,3 @@ export default function ProfileForm({ editing: editingProp, onEditingChange }: P
     </form>
   )
 }// ProfileForm.tsx → handleSubmit
-

@@ -461,7 +461,7 @@ export default function EditProfileView() {
                     <option className="bg-neutral-950" value="Consultor">Consultor</option>
                   </select>
                   <p className="mt-2 text-xs text-neutral-400">
-                    Si eliges "Consultor", aparecerás en la red de profesionales y podrás ofrecer servicios.
+                    Si eliges &quot;Consultor&quot;, aparecerás en la red de profesionales y podrás ofrecer servicios.
                   </p>
                 </div>
 

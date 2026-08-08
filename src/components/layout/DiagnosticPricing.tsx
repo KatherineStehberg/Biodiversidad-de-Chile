@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { FaCheckCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 export default function DiagnosticPricing() {
   const starterCheckoutUrl =

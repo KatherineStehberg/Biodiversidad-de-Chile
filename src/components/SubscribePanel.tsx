@@ -14,7 +14,7 @@ export default function SubscribePanel() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       setStatus('success')
       setEmail('')
-    } catch (err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch {
       setStatus('error')
     }
   }

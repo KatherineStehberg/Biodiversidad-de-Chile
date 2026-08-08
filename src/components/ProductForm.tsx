@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -65,7 +64,7 @@ export default function ProductForm({ onCreated }: { onCreated?: () => void }) {
         const j = await res.json().catch(() => null)
         setMessage(j?.error || 'Error creando producto')
       }
-    } catch (err) {
+    } catch {
       setMessage('Error de red')
     } finally {
       setSaving(false)

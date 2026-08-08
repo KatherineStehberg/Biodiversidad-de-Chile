@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import Link from 'next/link'
-import { FiArrowRight, FiHeart, FiUsers, FiClock, FiTarget, FiShare2, FiCheckCircle } from 'react-icons/fi'
+import { FiArrowRight, FiHeart, FiUsers, FiClock, FiShare2, FiCheckCircle } from 'react-icons/fi'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
