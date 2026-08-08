@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
 
 interface Product {
@@ -90,11 +91,11 @@ export async function PUT(
 
     return NextResponse.json({ ...product, seller })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating product:', error)
     
     return NextResponse.json(
-      { error: 'Error interno del servidor' }, 
+      { error: getErrorMessage(error, 'Error interno del servidor') }, 
       { status: 500 }
     )
   }

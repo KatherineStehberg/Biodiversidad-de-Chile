@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import PointsBadge from '@/components/ui/PointsBadge'
+import type { User } from '@supabase/supabase-js'
 
 interface UserMetadata {
   name?: string
@@ -36,7 +37,7 @@ const BOTTOM_ITEMS = [
 ]
 
 export default function ProfileLayout({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()

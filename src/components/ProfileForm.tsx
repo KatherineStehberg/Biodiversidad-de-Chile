@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 type Props = {
   editing?: boolean
@@ -20,7 +21,7 @@ interface UserMetadata {
 }
 
 export default function ProfileForm({ editing: editingProp, onEditingChange }: Props = {}) {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
   const [editingInternal, setEditingInternal] = useState(false)

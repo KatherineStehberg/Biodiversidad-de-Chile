@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     let safeRole: string | undefined = undefined
 
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       id: userId,
       email: token?.email,
       updated_at: new Date().toISOString()
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         console.error('Error searching consultant:', searchError)
       }
 
-      const consultantData: any = {
+      const consultantData: Record<string, unknown> = {
         usuario_id: data.id,
         especialidad: especialidad || 'General',
         experiencia: experiencia || 'Perfil de consultor',
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: 'Error creating consultant', details: insertError.message }, { status: 500 })
         }
       } else {
-        const updateData: any = {}
+        const updateData: Record<string, unknown> = {}
         if (especialidad) updateData.especialidad = especialidad
         if (experiencia) updateData.experiencia = experiencia
         if (cv_url !== undefined) updateData.cv_url = cv_url

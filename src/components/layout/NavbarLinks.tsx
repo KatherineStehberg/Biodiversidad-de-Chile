@@ -21,7 +21,7 @@ export default function NavbarLinks() {
 
   return (
     <ul className="flex items-center gap-0.5">
-      {navItems.map((item: any) => {
+      {navItems.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== '/' && pathname.startsWith(item.href))

@@ -10,6 +10,18 @@ export interface WPPost {
   category: string
 }
 
+interface WPRawPost {
+  id: number
+  title?: { rendered?: string }
+  excerpt?: { rendered?: string }
+  link: string
+  date: string
+  _embedded?: {
+    'wp:featuredmedia'?: Array<{ source_url?: string }>
+    'wp:term'?: Array<Array<{ name?: string }>>
+  }
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<[^>]+>/g, '')
@@ -42,9 +54,9 @@ export async function getWordPressPosts(count = 6): Promise<WPPost[]> {
 
     if (!res.ok) return fallbackPosts
 
-    const raw = await res.json()
+    const raw: WPRawPost[] = await res.json()
 
-    return raw.map((post: any) => {
+    return raw.map((post) => {
       const media = post._embedded?.['wp:featuredmedia']
       const image: string | null = media?.[0]?.source_url ?? null
 

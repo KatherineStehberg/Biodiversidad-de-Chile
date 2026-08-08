@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 
 interface Props {
   onCreated?: () => void
@@ -75,8 +76,8 @@ export default function JobOfferForm({ onCreated }: Props) {
       }
 
       setSent(true)
-    } catch (err: any) {
-      setError(err?.message || 'Error al publicar. Intenta nuevamente.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Error al publicar. Intenta nuevamente.'))
     } finally {
       setSending(false)
     }

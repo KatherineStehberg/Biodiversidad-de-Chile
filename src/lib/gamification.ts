@@ -34,6 +34,19 @@ export interface Achievement extends AchievementDef {
   completed: boolean
 }
 
+export interface GamificationUserData {
+  name?: string | null
+  imagen_perfil?: string | null
+  membresia_activa?: boolean | null
+  especialidad?: string | null
+}
+
+export interface GamificationConsultantData {
+  especialidad?: string | null
+  experiencia?: string | null
+  verificado?: boolean | null
+}
+
 // ── Logros compartidos para todos los roles ────────────────
 export const COMMON: AchievementDef[] = [
   {
@@ -163,8 +176,8 @@ export function getLevelProgress(pts: number): { current: number; needed: number
 // ── Evaluación de logros ──────────────────────────────────
 export function evaluateAchievements(
   defs: AchievementDef[],
-  userData: any,
-  consultorData: any,
+  userData: GamificationUserData | null,
+  consultorData: GamificationConsultantData | null,
   counts: { offers: number; resources: number; products: number }
 ): Achievement[] {
   return defs.map(def => {

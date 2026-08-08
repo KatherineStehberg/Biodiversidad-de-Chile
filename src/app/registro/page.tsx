@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 import { getURL } from '@/lib/utils'
 
 const AuthBackground = () => {
@@ -104,8 +105,8 @@ export default function RegistroPage() {
       }
       setSuccess('Cuenta creada. Revisa tu correo para confirmar.')
       setPendingVerification(true)
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear la cuenta. Intenta nuevamente.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Error al crear la cuenta. Intenta nuevamente.'))
     } finally {
       setIsLoading(false)
     }
@@ -121,8 +122,8 @@ export default function RegistroPage() {
       })
       if (resendError) throw resendError
       setResendStatus('Correo de confirmación reenviado. Revisa tu bandeja y spam.')
-    } catch (err: any) {
-      setResendStatus(err?.message || 'No se pudo reenviar el correo de confirmación')
+    } catch (err) {
+      setResendStatus(getErrorMessage(err, 'No se pudo reenviar el correo de confirmación'))
     } finally {
       setIsLoading(false)
     }
@@ -138,8 +139,8 @@ export default function RegistroPage() {
       if (oauthError) {
         throw oauthError
       }
-    } catch (error: any) {
-      setError(error?.message || 'Error al registrarse con Google')
+    } catch (error) {
+      setError(getErrorMessage(error, 'Error al registrarse con Google'))
     } finally {
       setIsLoading(false)
     }
