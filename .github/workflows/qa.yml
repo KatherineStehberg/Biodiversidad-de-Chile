@@ -4,9 +4,7 @@ on:
   push:
     branches: [qa-automation-course]
   pull_request:
-    branches:
-      - qa-automation-course
-      - fix/qa-baseline-build-lint
+    branches: [qa-automation-course]
 
 jobs:
   qa:
