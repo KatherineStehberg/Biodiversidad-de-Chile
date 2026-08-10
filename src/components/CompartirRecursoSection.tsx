@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import ProtectedAction from './ProtectedAction'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 
 function CompartirForm({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState('')
@@ -28,8 +29,8 @@ function CompartirForm({ onClose }: { onClose: () => void }) {
       })
       if (!res.ok) throw new Error((await res.json())?.error || 'Error')
       setStatus('sent')
-    } catch (err: any) {
-      setError(err?.message || 'No se pudo enviar')
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo enviar'))
       setStatus('error')
     }
   }

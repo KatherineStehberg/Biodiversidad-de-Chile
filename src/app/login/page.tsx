@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 import { getURL } from '@/lib/utils'
 
 const AuthBackground = () => {
@@ -69,13 +70,14 @@ export default function LoginPage() {
       const { error: signError } = await supabase.auth.signInWithPassword({ email, password })
       if (signError) throw signError
       router.push('/dashboard')
-    } catch (err: any) {
-      const msg = (err?.message || '').toLowerCase()
+    } catch (err) {
+      const message = getErrorMessage(err, '')
+      const msg = message.toLowerCase()
       if (msg.includes('confirm') || msg.includes('verification') || msg.includes('not confirmed')) {
         setPendingVerification(true)
         setError('Tu correo aún no está confirmado. Revisa tu bandeja y spam.')
       } else {
-        setError(err?.message || 'Credenciales inválidas')
+        setError(message || 'Credenciales inválidas')
       }
     } finally {
       setIsLoading(false)
@@ -92,8 +94,8 @@ export default function LoginPage() {
       })
       if (resendError) throw resendError
       setResendStatus('Correo de confirmación reenviado. Revisa tu bandeja y spam.')
-    } catch (err: any) {
-      setResendStatus(err?.message || 'No se pudo reenviar el correo de confirmación')
+    } catch (err) {
+      setResendStatus(getErrorMessage(err, 'No se pudo reenviar el correo de confirmación'))
     } finally {
       setIsLoading(false)
     }
@@ -110,8 +112,8 @@ export default function LoginPage() {
         }
       })
       if (oauthError) throw oauthError
-    } catch (error: any) {
-      setError(error?.message || 'Error al iniciar sesión con Google')
+    } catch (error) {
+      setError(getErrorMessage(error, 'Error al iniciar sesión con Google'))
     } finally {
       setIsLoading(false)
     }

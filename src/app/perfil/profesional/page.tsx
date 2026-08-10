@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 import ProfileLayout from '@/components/layout/ProfileLayout'
 import { FaLinkedin, FaInstagram, FaFacebook, FaTiktok } from 'react-icons/fa'
 import { FiUpload, FiFileText, FiExternalLink } from 'react-icons/fi'
@@ -93,8 +94,8 @@ function ProfessionalForm() {
       if (error) throw error
       const { data: { publicUrl } } = supabase.storage.from('documentos').getPublicUrl(path)
       setFormData(prev => ({ ...prev, cv_url: publicUrl }))
-    } catch (err: any) {
-      setMessage('Error al subir CV: ' + (err.message || 'intenta de nuevo'))
+    } catch (err) {
+      setMessage('Error al subir CV: ' + getErrorMessage(err, 'intenta de nuevo'))
     } finally {
       setUploadingCV(false)
     }
@@ -122,8 +123,8 @@ function ProfessionalForm() {
 
       setMessage('Perfil actualizado correctamente')
       router.refresh()
-    } catch (err: any) {
-      setMessage(err.message || 'Error de conexión')
+    } catch (err) {
+      setMessage(getErrorMessage(err, 'Error de conexión'))
     } finally {
       setSaving(false)
     }

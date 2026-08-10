@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-helper'
 import { sendAdminNotification, sendAuthorNotification } from '@/lib/email'
@@ -51,11 +52,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ...product, seller }, { status: 201 })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating product:', error)
     
     return NextResponse.json(
-      { error: 'Error interno del servidor' }, 
+      { error: getErrorMessage(error, 'Error interno del servidor') }, 
       { status: 500 }
     )
   }

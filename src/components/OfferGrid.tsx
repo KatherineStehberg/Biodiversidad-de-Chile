@@ -8,9 +8,13 @@ interface OfferItem {
   id: string;
   title: string;
   description?: string;
-  location?: any;
+  location?: { country?: string; city?: string };
   contact?: string;
-  [key: string]: any;
+  salaryMin?: number;
+  salaryMax?: number;
+  modality?: string;
+  employmentType?: string;
+  tags?: string[];
 }
 
 export default function OfferGrid({ items }: { items?: OfferItem[] }) {

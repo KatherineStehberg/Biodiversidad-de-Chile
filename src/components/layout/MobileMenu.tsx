@@ -23,7 +23,7 @@ export default function MobileMenu({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="absolute top-full left-0 w-full bg-neutral-950/98 border-t border-neutral-800 backdrop-blur-xl text-white flex flex-col p-4 gap-1 z-40 shadow-2xl">
-      {navItems.map((item: any) => {
+      {navItems.map((item) => {
         const isActive =
           pathname === item.href ||
           (item.href !== '/' && pathname.startsWith(item.href))

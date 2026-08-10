@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-helper'
 
@@ -52,8 +53,8 @@ export async function POST(request: NextRequest) {
     const checkoutUrl = `${flowBase}?${params.toString()}`
 
     return NextResponse.json({ ok: true, checkoutUrl })
-  } catch (err: any) {
+  } catch (err) {
     console.error('[api/subscriptions/create] error', err)
-    return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(err, 'Server error') }, { status: 500 })
   }
 }

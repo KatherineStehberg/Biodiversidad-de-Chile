@@ -12,6 +12,7 @@ import {
   getLevel,
   getNextLevel,
   getLevelProgress,
+  type GamificationConsultantData,
 } from '@/lib/gamification'
 
 export interface GamificationState {
@@ -55,7 +56,7 @@ export function useGamification(): GamificationState {
         const isConsultant = ['consultor', 'consultant'].includes(userData?.tipo_usuario ?? '')
 
         // Datos del consultor (si aplica)
-        let consultorData: any = null
+        let consultorData: GamificationConsultantData | null = null
         if (isConsultant) {
           const { data } = await supabase
             .from('consultores')

@@ -18,7 +18,7 @@ interface Offer {
   id: string
   title: string
   description: string
-  location: any
+  location: { country?: string; city?: string }
   salaryMin?: number
   salaryMax?: number
   modality: string

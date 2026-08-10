@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/db'
 
+interface SubscriptionWebhookData {
+  id?: string
+  start_at?: string
+  current_period_end?: string
+}
+
+interface SubscriptionWebhookBody {
+  type?: string
+  data?: SubscriptionWebhookData
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Webhook placeholder: siempre responde OK
@@ -11,7 +22,7 @@ export async function POST(request: NextRequest) {
     const supabase = await dbConnect()
 
     // Ejemplo básico: actualizar estado si viene providerId y tipo
-    const { type, data } = body as { type: string, data: any }
+    const { type, data } = body as SubscriptionWebhookBody
     if (type === 'subscription.activated' || type === 'subscription.paid') {
       const providerId = data?.id
       if (providerId) {

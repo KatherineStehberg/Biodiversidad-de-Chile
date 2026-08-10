@@ -17,7 +17,6 @@ export default function MisPublicacionesPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [offers, setOffers] = useState<Offer[]>([])
-  const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -26,8 +25,6 @@ export default function MisPublicacionesPage() {
         router.push('/login')
         return
       }
-      setUserId(user.id)
-
       const { data } = await supabase
         .from('offers')
         .select('id,title,modality,isApproved,created_at')
