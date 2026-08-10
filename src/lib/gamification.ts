@@ -184,11 +184,11 @@ export function evaluateAchievements(
     let completed = false
     switch (def.id) {
       case 'register':          completed = true; break
-      case 'name':              completed = !!(userData?.name?.trim()?.length > 2); break
+      case 'name':              completed = (userData?.name?.trim().length ?? 0) > 2; break
       case 'photo':             completed = !!userData?.imagen_perfil; break
       case 'membership':        completed = !!userData?.membresia_activa; break
       case 'especialidad':      completed = !!(consultorData?.especialidad || userData?.especialidad); break
-      case 'experiencia':       completed = !!(consultorData?.experiencia?.length > 20); break
+      case 'experiencia':       completed = (consultorData?.experiencia?.length ?? 0) > 20; break
       case 'verified':          completed = !!consultorData?.verificado; break
       case 'first_offer':       completed = counts.offers > 0; break
       case 'first_resource':    completed = counts.resources > 0; break
