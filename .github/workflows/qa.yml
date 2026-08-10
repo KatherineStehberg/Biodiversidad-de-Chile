@@ -1,6 +1,7 @@
 name: QA — Playwright · Cypress · Cucumber
 
 on:
+  workflow_dispatch:
   push:
     branches: [qa-automation-course]
   pull_request:
