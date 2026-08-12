@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test')
+import { test, expect } from '@playwright/test'
 
 const publicRoutes = [
   '/', '/landing', '/marketplace', '/consultores', '/educacion', '/campanas',
