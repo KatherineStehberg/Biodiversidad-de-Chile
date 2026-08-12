@@ -35,16 +35,13 @@ export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] 
               name
             )
           `)
-          //  .eq('verificado', true);
+          .eq('isApproved', true);
 
         if (error) {
           console.error('Error fetching consultants:', error);
-          // Fallback to sample data if there's an error
           setConsultants(items || []);
         } else {
-          // Transform the data to match the ConsultantSummary contract
           const transformedConsultants = data.map((consultant: ConsultorRow) => {
-            // Manejo seguro de la relación anidada (puede venir como objeto o array)
             const usuario = Array.isArray(consultant.usuarios)
               ? consultant.usuarios[0]
               : consultant.usuarios;
@@ -54,7 +51,7 @@ export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] 
               image: usuario?.imagen_perfil || undefined,
               name: usuario?.name || '',
               specialty: consultant.especialidad || '',
-              email: '', // no tenemos email en esta consulta
+              email: '',
               bio: consultant.experiencia || '',
             };
           });
@@ -68,7 +65,6 @@ export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] 
       }
     }
 
-    // Use provided items if available, otherwise fetch from Supabase
     if (items !== undefined) {
       setConsultants(items);
       setLoading(false);
