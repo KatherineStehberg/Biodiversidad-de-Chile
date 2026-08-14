@@ -17,7 +17,6 @@ export default function MisPublicacionesPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [offers, setOffers] = useState<Offer[]>([])
-  const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -26,7 +25,6 @@ export default function MisPublicacionesPage() {
         router.push('/login')
         return
       }
-      setUserId(user.id)
 
       const { data } = await supabase
         .from('offers')
@@ -43,49 +41,46 @@ export default function MisPublicacionesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
+        <p className="text-neutral-400">Cargando publicaciones...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-white">Mis publicaciones</h1>
-          <Link href="/perfil" className="text-sm text-gray-400 hover:text-white transition">
-            ← Volver al perfil
+    <main className="min-h-screen bg-neutral-950 text-white py-12 px-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Mis publicaciones</h1>
+            <p className="text-neutral-400 mt-2">Administra tus ofertas publicadas.</p>
+          </div>
+          <Link href="/ofertas/nueva" className="rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 font-medium">
+            Nueva publicación
           </Link>
         </div>
 
         {offers.length === 0 ? (
-          <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-12 text-center">
-            <div className="text-5xl mb-4">📋</div>
-            <h2 className="text-white font-semibold mb-2">Sin publicaciones aún</h2>
-            <p className="text-gray-400 text-sm mb-6">Publica una oferta laboral o convocatoria en la sección de Consultores.</p>
-            <Link
-              href="/consultores"
-              className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition"
-            >
-              Ir a Consultores
-            </Link>
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center text-neutral-400">
+            Aún no tienes publicaciones.
           </div>
         ) : (
           <div className="space-y-4">
-            {offers.map(offer => (
-              <div key={offer.id} className="bg-neutral-900 rounded-xl border border-neutral-800 p-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-medium">{offer.title}</h3>
-                  <p className="text-sm text-gray-400 mt-1">{offer.modality} · {new Date(offer.created_at).toLocaleDateString('es-CL')}</p>
+            {offers.map((offer) => (
+              <article key={offer.id} className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold">{offer.title}</h2>
+                    <p className="text-sm text-neutral-400">{offer.modality}</p>
+                  </div>
+                  <span className={`text-sm font-medium ${offer.isApproved ? 'text-green-400' : 'text-amber-400'}`}>
+                    {offer.isApproved ? 'Publicada' : 'Pendiente de aprobación'}
+                  </span>
                 </div>
-                <span className={`text-xs px-3 py-1 rounded-full font-medium ${offer.isApproved ? 'bg-green-900/40 text-green-300' : 'bg-yellow-900/40 text-yellow-300'}`}>
-                  {offer.isApproved ? 'Aprobada' : 'Pendiente'}
-                </span>
-              </div>
+              </article>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }
