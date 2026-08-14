@@ -13,7 +13,30 @@ import {
 } from './mock-data'
 
 // ── Tablas disponibles ─────────────────────────────────────
-const TABLES: Record<string, any[]> = {
+type JsonRecord = Record<string, unknown>
+
+type MockUser = {
+  id: string
+  email: string
+  name: string
+  password?: string
+  tipo_usuario?: string
+}
+
+type MockSession = ReturnType<typeof createSession>
+
+type SignUpArgs = {
+  email: string
+  password: string
+  options?: { data?: { name?: string } }
+}
+
+type OAuthArgs = {
+  provider: string
+  options?: { redirectTo?: string }
+}
+
+const TABLES: Record<string, readonly unknown[]> = {
   consultores: MOCK_CONSULTORES,
   offers: MOCK_OFFERS,
   products: MOCK_PRODUCTS,
@@ -22,7 +45,7 @@ const TABLES: Record<string, any[]> = {
 }
 
 // ── Gestión de sesión ──────────────────────────────────────
-const AUTH_LISTENERS: Array<(event: string, session: any) => void> = []
+const AUTH_LISTENERS: Array<(event: string, session: MockSession | null) => void> = []
 
 function createSession(user: { id: string; email: string; name: string }) {
   return {
@@ -41,33 +64,33 @@ function createSession(user: { id: string; email: string; name: string }) {
   }
 }
 
-function loadSession(): any | null {
+function loadSession(): MockSession | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem('mock_session')
-    return raw ? JSON.parse(raw) : null
+    return raw ? JSON.parse(raw) as MockSession : null
   } catch { return null }
 }
 
-function persistSession(session: any | null) {
+function persistSession(session: MockSession | null) {
   if (typeof window === 'undefined') return
   if (session) localStorage.setItem('mock_session', JSON.stringify(session))
   else localStorage.removeItem('mock_session')
 }
 
-function broadcast(event: string, session: any) {
+function broadcast(event: string, session: MockSession | null) {
   AUTH_LISTENERS.forEach(cb => cb(event, session))
 }
 
 // Usuarios registrados en sesión actual (solo cliente)
-function getLocalUsers(): any[] {
+function getLocalUsers(): MockUser[] {
   if (typeof window === 'undefined') return []
   try {
-    return JSON.parse(localStorage.getItem('mock_registered_users') || '[]')
+    return JSON.parse(localStorage.getItem('mock_registered_users') || '[]') as MockUser[]
   } catch { return [] }
 }
 
-function addLocalUser(user: any) {
+function addLocalUser(user: MockUser) {
   if (typeof window === 'undefined') return
   const users = getLocalUsers()
   users.push(user)
@@ -76,8 +99,8 @@ function addLocalUser(user: any) {
 
 // ── Query builder ──────────────────────────────────────────
 class MockQueryBuilder {
-  private _data: any[]
-  private _filters: Array<(item: any) => boolean> = []
+  private _data: unknown[]
+  private _filters: Array<(item: unknown) => boolean> = []
   private _orderField: string | null = null
   private _orderAsc = true
   private _limit: number | null = null
@@ -87,31 +110,32 @@ class MockQueryBuilder {
   private _countExact = false
   private _headOnly = false
   private _op: 'select' | 'insert' | 'update' | 'delete' = 'select'
-  private _insertValues: any = null
+  private _insertValues: unknown = null
 
   constructor(table: string) {
     this._data = [...(TABLES[table] ?? [])]
   }
 
   select(_fields?: string, opts?: { count?: string; head?: boolean }) {
+    void _fields
     if (opts?.count === 'exact') this._countExact = true
     if (opts?.head) this._headOnly = true
     return this
   }
 
-  eq(field: string, value: any) {
-    this._filters.push(item => String(item[field]) === String(value))
+  eq(field: string, value: unknown) {
+    this._filters.push(item => String((item as JsonRecord)[field]) === String(value))
     return this
   }
 
-  neq(field: string, value: any) {
-    this._filters.push(item => String(item[field]) !== String(value))
+  neq(field: string, value: unknown) {
+    this._filters.push(item => String((item as JsonRecord)[field]) !== String(value))
     return this
   }
 
-  in(field: string, values: any[]) {
+  in(field: string, values: unknown[]) {
     const sv = values.map(String)
-    this._filters.push(item => sv.includes(String(item[field])))
+    this._filters.push(item => sv.includes(String((item as JsonRecord)[field])))
     return this
   }
 
@@ -131,26 +155,29 @@ class MockQueryBuilder {
 
   single() { this._single = true; return this }
 
-  insert(values: any) { this._op = 'insert'; this._insertValues = values; return this }
-  update(_values: any) { this._op = 'update'; return this }
+  insert(values: unknown) { this._op = 'insert'; this._insertValues = values; return this }
+  update(values: unknown) { void values; this._op = 'update'; return this }
   delete() { this._op = 'delete'; return this }
 
   // Permite await sobre el builder
-  then(resolve: (value: any) => any, _reject?: (err: any) => any) {
+  then<TResult1 = unknown, TResult2 = never>(
+    resolve?: ((value: unknown) => TResult1 | PromiseLike<TResult1>) | null,
+    reject?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+  ): Promise<TResult1 | TResult2> {
+    void reject
+    const fulfill = resolve ?? ((value: unknown) => value as TResult1)
     if (this._op === 'insert') {
       const arr = Array.isArray(this._insertValues) ? this._insertValues : [this._insertValues]
-      const withMeta = arr.map(v => ({
+      const withMeta = arr.map(value => ({
         id: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         created_at: new Date().toISOString(),
-        ...v,
+        ...(value as JsonRecord),
       }))
-      resolve({ data: this._single ? withMeta[0] : withMeta, error: null })
-      return Promise.resolve()
+      return Promise.resolve(fulfill({ data: this._single ? withMeta[0] : withMeta, error: null }))
     }
 
     if (this._op === 'update' || this._op === 'delete') {
-      resolve({ data: [], error: null })
-      return Promise.resolve()
+      return Promise.resolve(fulfill({ data: [], error: null }))
     }
 
     // SELECT
@@ -162,8 +189,8 @@ class MockQueryBuilder {
       const field = this._orderField
       const asc = this._orderAsc
       result.sort((a, b) => {
-        const av = a[field] ?? ''
-        const bv = b[field] ?? ''
+        const av = (a as JsonRecord)[field] ?? ''
+        const bv = (b as JsonRecord)[field] ?? ''
         if (av < bv) return asc ? -1 : 1
         if (av > bv) return asc ? 1 : -1
         return 0
@@ -177,14 +204,12 @@ class MockQueryBuilder {
     }
 
     if (this._countExact) {
-      resolve({ data: this._headOnly ? null : result, count: this._data.length, error: null })
+      return Promise.resolve(fulfill({ data: this._headOnly ? null : result, count: this._data.length, error: null }))
     } else if (this._single) {
-      resolve({ data: result[0] ?? null, error: null })
+      return Promise.resolve(fulfill({ data: result[0] ?? null, error: null }))
     } else {
-      resolve({ data: result, error: null })
+      return Promise.resolve(fulfill({ data: result, error: null }))
     }
-
-    return Promise.resolve()
   }
 }
 
@@ -217,7 +242,7 @@ const mockAuth = {
     return { data: { session }, error: null }
   },
 
-  async signUp({ email, password, options }: any) {
+  async signUp({ email, password, options }: SignUpArgs) {
     const all = [...MOCK_AUTH_USERS, ...getLocalUsers()]
     if (all.find(u => u.email === email)) {
       return { data: { user: null }, error: { message: 'Este correo ya está registrado' } }
@@ -246,7 +271,7 @@ const mockAuth = {
     return { error: null }
   },
 
-  async signInWithOAuth({ provider, options }: any) {
+  async signInWithOAuth({ provider, options }: OAuthArgs) {
     // En modo mock, simula OAuth creando sesión inmediata
     const mockOAuthUser = {
       id: `oauth-${Date.now()}`,
@@ -264,15 +289,17 @@ const mockAuth = {
     return { data: { provider, url: options?.redirectTo || '/' }, error: null }
   },
 
-  async updateUser(_attrs: any) {
+  async updateUser(attrs: JsonRecord) {
+    void attrs
     return { data: { user: loadSession()?.user ?? null }, error: null }
   },
 
-  async resend(_attrs: any) {
+  async resend(attrs: JsonRecord) {
+    void attrs
     return { data: {}, error: null }
   },
 
-  onAuthStateChange(callback: (event: string, session: any) => void) {
+  onAuthStateChange(callback: (event: string, session: MockSession | null) => void) {
     AUTH_LISTENERS.push(callback)
     // Notifica inmediatamente con el estado actual (igual que Supabase real)
     const current = loadSession()
@@ -292,11 +319,23 @@ const mockAuth = {
 
 // ── Storage mock ───────────────────────────────────────────
 const mockStorage = {
-  from: (_bucket: string) => ({
-    upload: async (_path: string, _file: any) => ({ data: { path: _path }, error: null }),
-    getPublicUrl: (_path: string) => ({ data: { publicUrl: '/assets/blog-1.png' } }),
-    remove: async (_paths: string[]) => ({ data: {}, error: null }),
-  }),
+  from: (bucket: string) => {
+    void bucket
+    return {
+      upload: async (path: string, file: unknown) => {
+        void file
+        return { data: { path }, error: null }
+      },
+      getPublicUrl: (path: string) => {
+        void path
+        return { data: { publicUrl: '/assets/blog-1.png' } }
+      },
+      remove: async (paths: string[]) => {
+        void paths
+        return { data: {}, error: null }
+      },
+    }
+  },
 }
 
 // ── Cliente final ──────────────────────────────────────────

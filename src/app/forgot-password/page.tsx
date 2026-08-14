@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -24,8 +25,8 @@ export default function ForgotPasswordPage() {
       if (resetError) throw resetError
       setSent(true)
       setMessage('Te enviamos un correo con el enlace para restablecer tu contraseña. Revisa tu bandeja y spam.')
-    } catch (err: any) {
-      setError(err?.message || 'No se pudo enviar el correo. Intenta nuevamente.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo enviar el correo. Intenta nuevamente.'))
     } finally {
       setIsLoading(false)
     }

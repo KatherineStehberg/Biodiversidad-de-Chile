@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
+import type { Session } from '@supabase/supabase-js'
 import Link from 'next/link'
 
 export default function ResetPasswordPage() {
@@ -15,7 +17,7 @@ export default function ResetPasswordPage() {
   const [hasSession, setHasSession] = useState<boolean | null>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       setHasSession(!!data.session)
     }).catch(() => setHasSession(false))
   }, [])
@@ -37,8 +39,8 @@ export default function ResetPasswordPage() {
       if (updateError) throw updateError
       setDone(true)
       setTimeout(() => router.push('/login'), 3000)
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar la contraseña')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Error al actualizar la contraseña'))
     } finally {
       setLoading(false)
     }

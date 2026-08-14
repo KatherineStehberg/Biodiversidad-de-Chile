@@ -31,30 +31,39 @@ export default function ProductForm({ onCreated }: { onCreated?: () => void }) {
     setMessage('')
 
     try {
-      const images = [] as string[]
-      for (const f of files) {
-        const b = await fileToBase64(f)
-        images.push(b)
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) {
+        setMessage('Debes iniciar sesión para publicar un producto')
+        return
+      }
+
+      const images: string[] = []
+      for (const file of files) {
+        images.push(await fileToBase64(file))
       }
 
       const body = {
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         price: Number(price),
         category,
         images,
-        location: { country, city }
+        country: country.trim(),
+        city: city.trim(),
       }
 
       const res = await fetch('/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(body)
       })
 
       if (res.ok) {
-        setMessage('Producto creado')
+        setMessage('Producto creado y enviado para revisión')
         setTitle('')
         setDescription('')
         setPrice('')
@@ -62,10 +71,10 @@ export default function ProductForm({ onCreated }: { onCreated?: () => void }) {
         if (onCreated) onCreated()
         router.refresh()
       } else {
-        const j = await res.json().catch(() => null)
-        setMessage(j?.error || 'Error creando producto')
+        const responseBody = await res.json().catch(() => null)
+        setMessage(responseBody?.error || 'Error creando producto')
       }
-    } catch (err) {
+    } catch {
       setMessage('Error de red')
     } finally {
       setSaving(false)
@@ -89,7 +98,7 @@ export default function ProductForm({ onCreated }: { onCreated?: () => void }) {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-sm block mb-1">Precio (CLP)</label>
-          <input type="number" className="w-full px-3 py-2 rounded bg-neutral-700" value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} required />
+          <input type="number" min={0} className="w-full px-3 py-2 rounded bg-neutral-700" value={price} onChange={e => setPrice(e.target.value === '' ? '' : Number(e.target.value))} required />
         </div>
 
         <div>
@@ -121,7 +130,7 @@ export default function ProductForm({ onCreated }: { onCreated?: () => void }) {
       </div>
 
       <div className="flex justify-end">
-        <button type="submit" disabled={saving} className="bg-green-600 px-4 py-2 rounded font-semibold">{saving ? 'Subiendo...' : 'Agregar producto'}</button>
+        <button type="submit" disabled={saving} className="bg-green-600 px-4 py-2 rounded font-semibold disabled:opacity-60">{saving ? 'Subiendo...' : 'Agregar producto'}</button>
       </div>
     </form>
   )

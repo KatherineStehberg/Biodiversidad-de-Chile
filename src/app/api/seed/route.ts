@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
 
 export async function POST() {
@@ -105,10 +106,10 @@ export async function POST() {
       products: productsPayload.length
     }, { status: 201 })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error seeding database:', error)
     return NextResponse.json(
-      { error: 'Error al poblar la base de datos', details: error?.message || String(error) }, 
+      { error: 'Error al poblar la base de datos', details: getErrorMessage(error, String(error)) }, 
       { status: 500 }
     )
   }

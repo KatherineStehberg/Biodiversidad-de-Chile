@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 import { Session } from '@supabase/supabase-js'
 import { FiPlus } from 'react-icons/fi'
 
@@ -57,8 +58,8 @@ function PublicarProductoModal({ onClose, session }: { onClose: () => void; sess
         throw new Error(data?.error || 'Error al publicar')
       }
       setSent(true)
-    } catch (err: any) {
-      setError(err?.message || 'Error al publicar el producto')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Error al publicar el producto'))
     } finally {
       setSending(false)
     }
@@ -172,7 +173,7 @@ const SidebarFilters = () => {
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       setSession(data.session)
       setLoadingSession(false)
     }).catch(() => setLoadingSession(false))

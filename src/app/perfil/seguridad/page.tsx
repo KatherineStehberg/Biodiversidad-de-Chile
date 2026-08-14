@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import ProfileLayout from '@/components/layout/ProfileLayout'
 import { supabase } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/utils'
 
 export default function SeguridadPage() {
   return (
@@ -40,9 +41,9 @@ function SeguridadForm() {
       setMessage('Contraseña actualizada correctamente')
       setPassword('')
       setConfirm('')
-    } catch (err: any) {
+    } catch (err) {
       setIsError(true)
-      setMessage(err?.message || 'Error al actualizar la contraseña')
+      setMessage(getErrorMessage(err, 'Error al actualizar la contraseña'))
     } finally {
       setSaving(false)
     }

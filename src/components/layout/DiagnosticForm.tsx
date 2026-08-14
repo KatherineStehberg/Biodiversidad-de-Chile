@@ -72,7 +72,7 @@ export default function DiagnosticForm() {
 
     try {
       const dataToSend = Object.fromEntries(
-        Object.entries(formData).filter(([_, value]) => value.trim() !== '')
+        Object.entries(formData).filter(([, value]) => value.trim() !== '')
       );
 
       const response = await fetch('/api/diagnostic', {

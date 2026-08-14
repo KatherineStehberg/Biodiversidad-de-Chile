@@ -3,21 +3,14 @@
 import { useState } from 'react'
 import HeroConsultores from './HeroConsultores'
 import ConsultantGrid from './ConsultantGrid'
-
-interface ConsultantItem {
-  id: string
-  name: string
-  specialty?: string
-  bio?: string
-  image?: string
-}
+import type { ConsultantSummary } from '@/types/consultant'
 
 interface Filters {
   specialty: string
   modality: string
 }
 
-export default function ConsultoresClientSection({ items }: { items: ConsultantItem[] }) {
+export default function ConsultoresClientSection({ items }: { items: ConsultantSummary[] }) {
   const [filters, setFilters] = useState<Filters>({ specialty: '', modality: '' })
 
   const filtered = items.filter(c => {

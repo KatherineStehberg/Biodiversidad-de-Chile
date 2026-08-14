@@ -34,6 +34,19 @@ export interface Achievement extends AchievementDef {
   completed: boolean
 }
 
+export interface GamificationUserData {
+  name?: string | null
+  imagen_perfil?: string | null
+  membresia_activa?: boolean | null
+  especialidad?: string | null
+}
+
+export interface GamificationConsultantData {
+  especialidad?: string | null
+  experiencia?: string | null
+  verificado?: boolean | null
+}
+
 // ── Logros compartidos para todos los roles ────────────────
 export const COMMON: AchievementDef[] = [
   {
@@ -163,19 +176,19 @@ export function getLevelProgress(pts: number): { current: number; needed: number
 // ── Evaluación de logros ──────────────────────────────────
 export function evaluateAchievements(
   defs: AchievementDef[],
-  userData: any,
-  consultorData: any,
+  userData: GamificationUserData | null,
+  consultorData: GamificationConsultantData | null,
   counts: { offers: number; resources: number; products: number }
 ): Achievement[] {
   return defs.map(def => {
     let completed = false
     switch (def.id) {
       case 'register':          completed = true; break
-      case 'name':              completed = !!(userData?.name?.trim()?.length > 2); break
+      case 'name':              completed = (userData?.name?.trim().length ?? 0) > 2; break
       case 'photo':             completed = !!userData?.imagen_perfil; break
       case 'membership':        completed = !!userData?.membresia_activa; break
       case 'especialidad':      completed = !!(consultorData?.especialidad || userData?.especialidad); break
-      case 'experiencia':       completed = !!(consultorData?.experiencia?.length > 20); break
+      case 'experiencia':       completed = (consultorData?.experiencia?.length ?? 0) > 20; break
       case 'verified':          completed = !!consultorData?.verificado; break
       case 'first_offer':       completed = counts.offers > 0; break
       case 'first_resource':    completed = counts.resources > 0; break

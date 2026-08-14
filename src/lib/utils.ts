@@ -8,3 +8,7 @@ export const getURL = () => {
   url = url.charAt(url.length - 1) === '/' ? url : `${url}/`
   return url
 }
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}

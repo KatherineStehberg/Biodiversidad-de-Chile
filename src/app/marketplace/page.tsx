@@ -52,14 +52,14 @@ async function getProducts(searchParams: Awaited<MarketplacePageProps['searchPar
       avatar?: string
     }
 
-    const sellerIds = Array.from(new Set(productsData.map((p) => (p as RawProduct).seller_id).filter(Boolean)))
+    const sellerIds = Array.from(new Set(productsData.map((p: RawProduct) => (p as RawProduct).seller_id).filter(Boolean)))
     const sellersMap: Record<string, RawUser> = {}
     if (sellerIds.length > 0) {
       const sellersRes = await supabase.from('usuarios').select('id,name,avatar').in('id', sellerIds)
       const sellers = (sellersRes.data || []) as RawUser[]
       for (const s of sellers) sellersMap[String(s.id)] = s
     }
-    const serializedProducts = productsData.map((p) => {
+    const serializedProducts = productsData.map((p: RawProduct) => {
       const product = p as RawProduct
       const seller = product.seller_id ? sellersMap[String(product.seller_id)] : null
       return {

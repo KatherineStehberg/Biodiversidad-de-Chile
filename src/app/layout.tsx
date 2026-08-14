@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
 
+const siteUrl = "https://consultores.biodiversidad.cl";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,8 +19,8 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Biodiversidad - Plataforma Sustentable',
-  url: 'https://www.biodiversidad.cl',
-  logo: 'https://www.biodiversidad.cl/assets/LogotipoBlanco.png',
+  url: siteUrl,
+  logo: `${siteUrl}/assets/LogotipoBlanco.png`,
   description: 'Conectamos personas con la biodiversidad. Una plataforma sustentable, abierta y humana para el ecosistema verde.',
   sameAs: [
     'https://www.facebook.com/biodiversidad',
@@ -28,19 +29,19 @@ const jsonLd = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.biodiversidad.cl"),
+  metadataBase: new URL(siteUrl),
   title: "Biodiversidad - Plataforma Sustentable",
   description: "Conectamos personas con la biodiversidad. Una plataforma sustentable, abierta y humana para el ecosistema verde.",
   openGraph: {
     title: "Biodiversidad - Plataforma Sustentable",
     description: "Conectamos personas con la biodiversidad. Una plataforma sustentable, abierta y humana para el ecosistema verde.",
-    url: "https://www.biodiversidad.cl",
+    url: siteUrl,
     siteName: "Biodiversidad",
     locale: "es_CL",
     type: "website",
     images: [
       {
-        url: "https://www.biodiversidad.cl/assets/LogotipoBlanco.png",
+        url: `${siteUrl}/assets/LogotipoBlanco.png`,
         width: 1200,
         height: 630,
         alt: "Biodiversidad - Plataforma Sustentable",
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Biodiversidad - Plataforma Sustentable",
     description: "Conectamos personas con la biodiversidad. Una plataforma sustentable, abierta y humana para el ecosistema verde.",
-    images: ["https://www.biodiversidad.cl/assets/LogotipoBlanco.png"],
+    images: [`${siteUrl}/assets/LogotipoBlanco.png`],
   },
 };
 
