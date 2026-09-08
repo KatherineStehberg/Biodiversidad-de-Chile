@@ -4,7 +4,7 @@ Plataforma web para la gestión y visualización de información relacionada con
 
 ## Estado del proyecto
 
-El repositorio está preparado como aplicación **Next.js con despliegue Docker/Coolify**. Antes de cada redeploy de producción se debe validar el build y las variables de entorno del entorno de destino.
+El repositorio corresponde a la aplicación **Next.js** de Biodiversidad de Chile. El despliegue de producción **no utiliza Docker**.
 
 Portal:
 - https://consultores.biodiversidad.cl/
@@ -33,7 +33,6 @@ Portal:
 - Playwright
 - Cypress
 - Cucumber
-- Docker
 
 ## Instalación local
 
@@ -80,7 +79,7 @@ npm run test:cucumber    # pruebas Cucumber
 
 La aplicación utiliza Supabase y servicios de autenticación/correo. Las credenciales reales **no deben almacenarse en Git**.
 
-Las variables `NEXT_PUBLIC_*` utilizadas por Next.js pueden quedar incorporadas al bundle durante `npm run build`. Por este motivo, para producción deben estar correctamente definidas **antes del build** en Coolify o en el mecanismo de construcción utilizado.
+Las variables `NEXT_PUBLIC_*` utilizadas por Next.js pueden quedar incorporadas al bundle durante `npm run build`, por lo que las variables reales de producción deben estar configuradas en el entorno **antes de ejecutar el build**.
 
 Variables utilizadas por el proyecto pueden incluir, según el entorno:
 
@@ -103,43 +102,38 @@ El proyecto utiliza **Supabase** para persistencia de datos y funcionalidades ba
 
 Las variables del proyecto Supabase deben configurarse en el entorno de ejecución/despliegue y no hardcodearse en el repositorio.
 
-## Docker
+## Despliegue de producción
 
-El proyecto utiliza salida standalone de Next.js (`output: 'standalone'`) para generar una imagen de producción más pequeña.
+El despliegue oficial **no usa Docker**. La aplicación debe desplegarse como proyecto Node.js/Next.js utilizando la rama `main`.
 
 Flujo esperado:
 
 ```text
-npm ci → npm run build → imagen Docker → Coolify → health check
+git pull origin main
+npm ci
+npm run typecheck
+npm run lint
+npm run build
+npm run start
 ```
-
-El contenedor expone el puerto `3000` y ejecuta la aplicación con Node.js.
-
-## Despliegue en Coolify
-
-El despliegue productivo se realiza en un VPS mediante Coolify.
 
 Antes de un redeploy:
 
 1. Confirmar que la rama a desplegar sea `main`.
-2. Revisar las variables de entorno de producción en Coolify.
-3. Confirmar que no se estén utilizando datos mock.
-4. Ejecutar o validar `npm run typecheck`.
-5. Ejecutar o validar `npm run lint`.
-6. Ejecutar o validar `npm run build`.
-7. Construir/desplegar la imagen Docker.
-8. Comprobar el health endpoint y las rutas principales después del deploy.
-9. Verificar conexión real con Supabase, autenticación y funciones críticas.
-
-## Nota de producción
-
-El `Dockerfile` actual contiene valores mock utilizados para permitir builds reproducibles sin credenciales reales. **Estos valores no deben considerarse configuración de producción.** Debido a que las variables públicas de Next.js pueden resolverse durante el build, el pipeline de Coolify debe suministrar las variables reales en la etapa de construcción o el Dockerfile debe ajustarse antes del redeploy definitivo.
+2. Configurar las variables de entorno reales de producción en el servidor o plataforma de despliegue.
+3. Confirmar que `NEXT_PUBLIC_USE_MOCK_DATA` no esté habilitado en producción.
+4. Ejecutar `npm ci`.
+5. Validar `npm run typecheck`.
+6. Validar `npm run lint`.
+7. Ejecutar `npm run build`.
+8. Iniciar la aplicación con `npm run start` o mediante el process manager configurado en el servidor.
+9. Verificar las rutas principales, conexión real con Supabase, autenticación y funciones críticas después del deploy.
 
 ## Seguridad
 
 - No versionar `.env` con credenciales reales.
 - No exponer claves privadas o `service_role` de Supabase al navegador.
-- Mantener secretos únicamente en Coolify/entorno seguro.
+- Mantener secretos únicamente en el entorno seguro del servidor o plataforma de despliegue.
 - Revisar autenticación, permisos y acceso a datos después de cada cambio relevante.
 
 ## Repositorio
