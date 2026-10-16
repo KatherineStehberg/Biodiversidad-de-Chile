@@ -267,7 +267,7 @@ export const MOCK_RESOURCES = [
     title: 'Manual de Evaluación de Impacto Ambiental en Chile',
     description:
       'Guía práctica basada en el SEIA chileno. Explica el proceso de ingreso, evaluación y calificación de proyectos.',
-    image: '/assets/featured/chakana.jpg',
+    image: '/assets/resources/manual-eia-chile.webp',
     link: 'https://biodiversidad.cl',
     isActive: true,
     author_id: 'consultor-001',
@@ -278,7 +278,7 @@ export const MOCK_RESOURCES = [
     title: 'Catálogo de Especies Amenazadas en Chile',
     description:
       'Listado de flora y fauna con categoría de conservación según el Reglamento de Clasificación de Especies (RCE) del MMA.',
-    image: '/assets/featured/chakana.jpg',
+    image: '/assets/resources/catalogo-especies-amenazadas-chile.webp',
     link: 'https://biodiversidad.cl',
     isActive: true,
     author_id: 'consultor-002',
@@ -289,7 +289,7 @@ export const MOCK_RESOURCES = [
     title: 'Protocolo de Muestreo de Humedales Urbanos',
     description:
       'Documento técnico con metodología estandarizada para levantamiento de fauna y flora en humedales urbanos costeros.',
-    image: '/assets/featured/chakana.jpg',
+    image: '/assets/resources/protocolo-muestreo-humedales-urbanos.webp',
     link: 'https://biodiversidad.cl',
     isActive: true,
     author_id: 'consultor-003',
