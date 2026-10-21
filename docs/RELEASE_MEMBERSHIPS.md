@@ -15,7 +15,7 @@
 
 En el hosting, antes del build:
 
-- `NEXT_PUBLIC_SITE_URL`: URL HTTPS del portal definitivo, sin rutas. Confirmar si sigue siendo `https://consultores.biodiversidad.cl`.
+- `NEXT_PUBLIC_SITE_URL`: `https://portal.biodiversidad.cl`, dominio definitivo del sitio completo confirmado por Katherine, sin rutas. Diagnóstico Express es una sección de este portal.
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: proyecto real.
 - `NEXT_PUBLIC_USE_MOCK_DATA=false`.
 
@@ -80,7 +80,7 @@ No hay conexión administrativa identificada a Supabase, Flow ni al panel de hos
 | `N8N_DIAGNOSTIC_WEBHOOK_URL`, `N8N_WEBHOOK_URL` | Faltantes | Sin acceso; pendiente de lectura |
 | `OFFERS_SHOW_PENDING`, `OFFERS_ENFORCE_SMTP` | Configuradas | Sin acceso; pendiente de lectura |
 
-`FLOW_CHECKOUT_URL` local es legacy y no configura el nuevo flujo. `NEXTAUTH_URL`/`NEXTAUTH_SECRET` locales no configuran Supabase Auth. No copiar secretos ni archivos .env a Git ni al chat. El estado «configurada» sólo indica presencia, no validez. El portal documentado es `https://consultores.biodiversidad.cl`; sigue pendiente confirmación del responsable/panel de hosting. El sitio principal no se reemplaza.
+`FLOW_CHECKOUT_URL` local es legacy y no configura el nuevo flujo. `NEXTAUTH_URL`/`NEXTAUTH_SECRET` locales no configuran Supabase Auth. No copiar secretos ni archivos .env a Git ni al chat. El estado «configurada» sólo indica presencia, no validez. Katherine confirmó `https://portal.biodiversidad.cl` para el sitio completo. Sigue pendiente comprobar su configuración efectiva en hosting, Supabase Auth y retornos de Flow; la confirmación del destino no acredita configuración remota. El sitio principal no se reemplaza y no se modificó DNS.
 
 ## Correspondencia de beneficios
 
@@ -91,7 +91,7 @@ Semilla describe navegación pública, perfil y envío a moderación. Brote desc
 ## Pendientes que siguen bloqueando aprobación de producción — NO LISTO
 
 - Credenciales/hosting/Supabase real no inspeccionados ni configurados en esta intervención.
-- Obtener lectura autorizada del panel del hosting y administración de Supabase/Flow por canales del proveedor, sin compartir claves en chat. Confirmar dominio del portal y variables reales antes del build Node.js 22/Next.js, sin Docker.
+- Obtener lectura autorizada del panel del hosting y administración de Supabase/Flow por canales del proveedor, sin compartir claves en chat. Verificar el dominio confirmado `portal.biodiversidad.cl` y variables reales antes del build Node.js 22/Next.js, sin Docker. Supabase Auth debe usar `https://portal.biodiversidad.cl` como Site URL y permitir `https://portal.biodiversidad.cl/dashboard` y `https://portal.biodiversidad.cl/reset-password`; Flow recibirá confirmación y retorno bajo ese mismo origen mediante la configuración del servidor.
 - Inspeccionar esquema/RLS/ACL, vistas y funciones expuestas reales; ajustar y revisar ambas migraciones. Corregir drift de offers/resources y perfil Auth antes de aplicarlas mediante un procedimiento separado autorizado. #11 sigue abierto: no hay evidencia real de que REST/GraphQL/RPC antiguos no expongan datos.
 - El código nuevo requiere las vistas y RPC propuestas: no desplegarlo contra la base antigua. Verificar rechazo de consultas de usuarios ajenos, contactos sin membresía, contenido pendiente, autoaprobación y mutación de archivos ajenos en un entorno separado, cuando se autorice esa validación.
 - Configurar Email/Google, URLs permitidas, confirmación y recuperación en Supabase Auth; comprobar registro, llegada y uso de correo, login, OAuth, logout y dashboard. Configurar SMTP/admin/moderación para que la revisión editorial pueda operar.

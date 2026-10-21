@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const siteUrl = 'https://consultores.biodiversidad.cl'
+const siteUrl = 'https://portal.biodiversidad.cl'
 
 const publicRoutes = [
   { path: '', changeFrequency: 'weekly', priority: 1 },
