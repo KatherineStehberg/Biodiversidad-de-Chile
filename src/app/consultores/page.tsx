@@ -36,17 +36,14 @@ export default async function ConsultoresPage() {
 
   try {
     const { data: consData, error: consError } = await supabase
-      .from('consultores')
+      .from('consultant_directory')
       .select(`
         id,
         especialidad,
         experiencia,
         verificado,
         created_at,
-        usuarios!inner (
-          name,
-          imagen_perfil
-        )
+        usuarios
       `)
       .eq('isApproved', true)
       .order('created_at', { ascending: false })
@@ -56,7 +53,7 @@ export default async function ConsultoresPage() {
 
     const { data: offData, error: offError } = await supabase
       .from('offers')
-      .select('id,title,description,location,salaryMin,salaryMax,modality,employmentType,contact,tags,isApproved,created_at')
+      .select('id,title,description,location,salaryMin,salaryMax,modality,employmentType,tags,isApproved,created_at')
       .eq('isApproved', true)
       .order('created_at', { ascending: false })
       .limit(12)
@@ -87,7 +84,7 @@ export default async function ConsultoresPage() {
     salaryMax: o.salaryMax,
     modality: o.modality,
     employmentType: o.employmentType,
-    contact: o.contact,
+
     tags: o.tags || []
   }))
 

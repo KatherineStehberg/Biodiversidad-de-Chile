@@ -29,11 +29,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'SMTP not configured on server. Cannot publish offers.' }, { status: 500 })
     }
 
-    const body = await request.json()
+    const source = await request.json()
+    if (!source || typeof source !== 'object' || typeof source.title !== 'string' || !source.title.trim()) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
+    const fields = ['title','description','requirements','salaryMin','salaryMax','currency','location','modality','employmentType','contact','tags']
+    const body = Object.fromEntries(fields.filter(key => key in source).map(key => [key, source[key]]))
     const insertRes = await supabase
       .from('offers')
       .insert({ ...body, author: userId, isApproved: false })
-      .select('*')
+      .select('id,title,isApproved,created_at')
       .single()
     if (insertRes.error) {
       return NextResponse.json({ error: 'Datos inválidos', details: insertRes.error.message }, { status: 400 })
@@ -41,9 +44,9 @@ export async function POST(request: NextRequest) {
     const offer = insertRes.data
 
     // notify admins to review
-    const base = process.env.NEXTAUTH_URL || ''
-    const secretParam = process.env.MODERATION_SECRET ? `&secret=${encodeURIComponent(process.env.MODERATION_SECRET)}` : ''
-    const approveUrl = `${base}/api/moderation/approve?type=offer&id=${offer.id}${secretParam}`
+    const base = process.env.NEXT_PUBLIC_SITE_URL || ''
+    const secretParam = process.env.MODERATION_SECRET ? `#secret=${encodeURIComponent(process.env.MODERATION_SECRET)}` : ''
+    const approveUrl = `${base}/moderation?type=offer&id=${offer.id}${secretParam}`
     await sendAdminNotification({
       subject: `Nueva oferta por aprobar: ${offer.title}`,
       text: `Se creó una nueva oferta: ${offer.title}\nRevisar y aprobar: ${approveUrl}`

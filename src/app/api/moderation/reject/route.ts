@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import dbConnect from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendAuthorNotification } from '@/lib/email'
 
 interface AuthorUser {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (!type || !id) return NextResponse.json({ error: 'Missing params' }, { status: 400 })
 
-    const supabase = await dbConnect()
+    const supabase = supabaseAdmin()
 
     if (!['product', 'offer', 'consultant'].includes(type)) {
       return NextResponse.json({ error: 'Unknown type' }, { status: 400 })

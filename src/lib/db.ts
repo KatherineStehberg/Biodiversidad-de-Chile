@@ -7,6 +7,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 export async function dbConnect(accessToken?: string | null) {
   if (accessToken) {
     return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: {
         headers: {
           Authorization: `Bearer ${accessToken}`
@@ -15,7 +16,10 @@ export async function dbConnect(accessToken?: string | null) {
     })
   }
 
-  return supabase
+  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') return supabase
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+  })
 }
 
 export default dbConnect

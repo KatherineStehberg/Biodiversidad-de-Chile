@@ -1,60 +1,41 @@
+import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { getErrorMessage } from '@/lib/utils'
-import dbConnect from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-helper'
+import { MEMBERSHIP_PLANS, type PaidPlanId } from '@/lib/membership-plans'
+import { paymentConfig, flowRequest } from '@/lib/flow'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+
+export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await dbConnect()
-    const token = await getAuthUser(request)
-    if (!token || !token.sub) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const body = await request.json()
-    const { planId } = body
-    if (!planId) return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
-
-    // Mapear planes locales a precio/nombre
-    const PLAN_MAP: Record<string, { name: string, price: number }> = {
-      basic: { name: 'Plan Básico', price: 5 },
-      standard: { name: 'Plan Standard', price: 10 },
-      pro: { name: 'Plan Pro', price: 15 }
+    const user = await getAuthUser(request)
+    if (!user?.sub || !user.email) return NextResponse.json({ error: 'Inicia sesión para continuar' }, { status: 401 })
+    const { planId } = await request.json()
+    if (typeof planId !== 'string' || !Object.hasOwn(MEMBERSHIP_PLANS, planId)) {
+      return NextResponse.json({ error: 'Plan inválido' }, { status: 400 })
     }
-
-    const plan = PLAN_MAP[planId]
-    if (!plan) return NextResponse.json({ error: 'Unknown planId' }, { status: 400 })
-
-    // Crear suscripción local pendiente
-    const insertRes = await supabase
-      .from('subscriptions')
-      .insert({ user: token.sub, planId, planName: plan.name, price: plan.price, currency: 'USD', status: 'pending' })
-      .select('*')
-      .single()
-    if (insertRes.error) {
-      return NextResponse.json({ error: 'Datos inválidos', details: insertRes.error.message }, { status: 400 })
-    }
-    const sub = insertRes.data
-
-    // Construir URL de redirección a Flow (checkout simple)
-    const successUrl = `${process.env.NEXTAUTH_URL || ''}/subscriptions/success?sid=${sub.id}`
-    const cancelUrl = `${process.env.NEXTAUTH_URL || ''}/subscriptions/cancel?sid=${sub.id}`
-
-    // Ejemplo: enviar al usuario al portal de pago de Flow con los parámetros básicos
-    const flowBase = process.env.FLOW_CHECKOUT_URL || 'https://sandbox.flow.cl/app/web/pagar'
-    const params = new URLSearchParams({
-      planId,
-      planName: plan.name,
-      amount: String(plan.price),
-      currency: 'USD',
-      successUrl,
-      cancelUrl,
-      subscriptionId: String(sub.id),
-      userId: token.sub
+    const plan = MEMBERSHIP_PLANS[planId as PaidPlanId]
+    const { origin } = paymentConfig()
+    const db = supabaseAdmin()
+    // Cada intento tiene su propia orden. Nunca se acepta monto ni usuario desde el navegador.
+    const id = randomUUID()
+    const { error } = await db.from('subscriptions').insert({
+      id, user: user.sub, planId, planName: plan.name, price: plan.price, currency: 'CLP', status: 'pending'
     })
-    const checkoutUrl = `${flowBase}?${params.toString()}`
-
-    return NextResponse.json({ ok: true, checkoutUrl })
-  } catch (err) {
-    console.error('[api/subscriptions/create] error', err)
-    return NextResponse.json({ error: getErrorMessage(err, 'Server error') }, { status: 500 })
+    if (error) throw new Error('No se pudo registrar la orden')
+    const result = await flowRequest<{ url: string; token: string; flowOrder: number }>('payment/create', {
+      commerceOrder: id, subject: `Membresía ${plan.name} — 1 mes`, currency: 'CLP',
+      amount: String(plan.price), email: user.email,
+      urlConfirmation: `${origin}/api/subscriptions/webhook`, urlReturn: `${origin}/api/subscriptions/return`
+    }, 'POST')
+    const checkout = new URL(result.url)
+    if (checkout.protocol !== 'https:' || !(checkout.hostname === 'flow.cl' || checkout.hostname.endsWith('.flow.cl')) || !result.token) {
+      throw new Error('Respuesta de pago inválida')
+    }
+    checkout.searchParams.set('token', result.token)
+    return NextResponse.json({ checkoutUrl: checkout.toString() })
+  } catch {
+    return NextResponse.json({ error: 'No se pudo iniciar el pago. Intenta más tarde o contacta a soporte.' }, { status: 503 })
   }
 }

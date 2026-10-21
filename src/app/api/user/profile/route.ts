@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
       'usuario_regular': 'usuario_regular',
       'reclutador': 'reclutador',
       'consultor': 'consultor',
-      'admin': 'admin'
     }
 
     let safeRole: string | undefined = undefined
@@ -47,6 +46,7 @@ export async function POST(req: NextRequest) {
 
     if (name !== undefined) updates.name = clean(name)
     if (address !== undefined) updates.address = clean(address)
+    if (role === 'admin') return NextResponse.json({ error: 'Rol no permitido' }, { status: 403 })
     if (role !== undefined) {
       safeRole = ROLE_MAP[role] || 'usuario_regular'
       updates.tipo_usuario = clean(safeRole)
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('usuarios')
-      .upsert(updates, { onConflict: 'email' })
+      .upsert(updates, { onConflict: 'id' })
       .select('id, email, name')
       .single()
 
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
         experiencia: experiencia || 'Perfil de consultor',
         cv_url: cv_url || '',
         certificaciones: certificaciones || '',
+        isApproved: false,
         verificado: false
       }
       if (portfolio_url !== undefined) consultantData.portfolio_url = clean(portfolio_url)
@@ -106,8 +107,9 @@ export async function POST(req: NextRequest) {
         if (Object.keys(updateData).length > 0) {
           const { error: updateError } = await supabase
             .from('consultores')
-            .update(updateData)
+            .update({ ...updateData, isApproved: false })
             .eq('id', existing.id)
+            .eq('usuario_id', userId)
 
           if (updateError) {
             console.error('Error updating consultant profile:', updateError)

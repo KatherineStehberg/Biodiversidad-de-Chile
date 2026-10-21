@@ -92,7 +92,7 @@ export default function RegistroPage() {
         setIsLoading(false)
         return
       }
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -103,6 +103,7 @@ export default function RegistroPage() {
       if (signUpError) {
         throw signUpError
       }
+      if (signUpData.session) { window.location.assign('/dashboard'); return }
       setSuccess('Cuenta creada. Revisa tu correo para confirmar.')
       setPendingVerification(true)
     } catch (err) {
@@ -118,7 +119,8 @@ export default function RegistroPage() {
       setResendStatus('')
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
-        email: formData.email
+        email: formData.email,
+        options: { emailRedirectTo: `${getURL()}dashboard` }
       })
       if (resendError) throw resendError
       setResendStatus('Correo de confirmación reenviado. Revisa tu bandeja y spam.')

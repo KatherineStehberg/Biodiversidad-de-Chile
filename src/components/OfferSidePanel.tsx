@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import ContactGate from '@/components/ui/ContactGate'
+import { usePrivateContact } from '@/hooks/usePrivateContact'
 
 interface Offer {
   id: string
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function OfferSidePanel({ offer, onClose }: Props) {
+  const contact = usePrivateContact('offer', offer?.id)
   const [visible, setVisible] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -148,10 +150,10 @@ export default function OfferSidePanel({ offer, onClose }: Props) {
 
           {/* Contacto con gate de membresía */}
           <ContactGate>
-            {offer.contact ? (
-              offer.contact.includes('@') ? (
+            {contact ? (
+              contact.includes('@') ? (
                 <a
-                  href={`mailto:${offer.contact}?subject=Postulación: ${encodeURIComponent(offer.title)}`}
+                  href={`mailto:${contact}?subject=Postulación: ${encodeURIComponent(offer.title)}`}
                   className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"
                 >
                   ✉️ Postular por correo
@@ -159,7 +161,7 @@ export default function OfferSidePanel({ offer, onClose }: Props) {
               ) : (
                 <div className="bg-neutral-800 rounded-xl p-4 text-sm">
                   <span className="block text-xs text-gray-400 mb-1">Contacto directo:</span>
-                  <span className="text-white font-medium">{offer.contact}</span>
+                  <span className="text-white font-medium">{contact}</span>
                 </div>
               )
             ) : (
