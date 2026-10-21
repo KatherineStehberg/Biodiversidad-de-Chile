@@ -17,9 +17,13 @@ export default function ResetPasswordPage() {
   const [hasSession, setHasSession] = useState<boolean | null>(null)
 
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session)
+    })
     supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       setHasSession(!!data.session)
     }).catch(() => setHasSession(false))
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -37,6 +41,7 @@ export default function ResetPasswordPage() {
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password })
       if (updateError) throw updateError
+      await supabase.auth.signOut()
       setDone(true)
       setTimeout(() => router.push('/login'), 3000)
     } catch (err) {
@@ -54,7 +59,7 @@ export default function ResetPasswordPage() {
     )
   }
 
-  if (!hasSession) {
+  if (!hasSession && !done) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
         <div className="bg-neutral-900 rounded-2xl p-8 w-full max-w-md text-center shadow-xl">

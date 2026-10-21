@@ -23,17 +23,14 @@ export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] 
     async function fetchConsultants() {
       try {
         const { data, error } = await supabase
-          .from('consultores')
+          .from('consultant_directory')
           .select(`
             id,
             usuario_id,
             especialidad,
             experiencia,
             verificado,
-            usuarios!inner (
-              imagen_perfil,
-              name
-            )
+            usuarios
           `)
           .eq('isApproved', true);
 

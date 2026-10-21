@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import ContactGate from '@/components/ui/ContactGate'
+import { usePrivateContact } from '@/hooks/usePrivateContact'
 
 interface Props {
   consultant: null | { id: string; image: string; name: string; specialty: string; email?: string; bio?: string }
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function ConsultantSidePanel({ consultant, onClose }: Props) {
+  const contact = usePrivateContact('consultant', consultant?.id)
   const [visible, setVisible] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -91,9 +93,9 @@ export default function ConsultantSidePanel({ consultant, onClose }: Props) {
           <p className="text-sm text-gray-300 leading-relaxed">{consultant.bio}</p>
 
           <ContactGate>
-            {consultant.email ? (
+            {contact ? (
               <a
-                href={`mailto:${consultant.email}`}
+                href={`mailto:${contact}`}
                 className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"
               >
                 ✉️ Enviar correo

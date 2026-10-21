@@ -21,6 +21,7 @@ function ProfessionalForm() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingCV, setUploadingCV] = useState(false)
+  const [cvPreview, setCVPreview] = useState('')
   const [message, setMessage] = useState('')
   const cvInputRef = useRef<HTMLInputElement>(null)
 
@@ -38,6 +39,17 @@ function ProfessionalForm() {
   })
 
   useEffect(() => { loadData() }, [])
+  useEffect(() => {
+    let alive = true
+    setCVPreview('')
+    const prefix = 'storage://documentos/'
+    if (formData.cv_url.startsWith(prefix)) {
+      void supabase.storage.from('documentos').createSignedUrl(formData.cv_url.slice(prefix.length), 300)
+        .then(({ data }) => { if (alive) setCVPreview(data?.signedUrl || '') })
+        .catch(() => { if (alive) setCVPreview('') })
+    } else if (/^https:\/\//i.test(formData.cv_url)) setCVPreview(formData.cv_url)
+    return () => { alive = false }
+  }, [formData.cv_url])
 
   async function loadData() {
     try {
@@ -92,8 +104,7 @@ function ProfessionalForm() {
       const path = `cvs/${user.id}/${Date.now()}-${file.name}`
       const { error } = await supabase.storage.from('documentos').upload(path, file)
       if (error) throw error
-      const { data: { publicUrl } } = supabase.storage.from('documentos').getPublicUrl(path)
-      setFormData(prev => ({ ...prev, cv_url: publicUrl }))
+      setFormData(prev => ({ ...prev, cv_url: `storage://documentos/${path}` }))
     } catch (err) {
       setMessage('Error al subir CV: ' + getErrorMessage(err, 'intenta de nuevo'))
     } finally {
@@ -212,9 +223,9 @@ function ProfessionalForm() {
             <div>
               <label className="block text-sm text-gray-300 mb-1.5">Currículum Vitae (CV)</label>
               <div className="space-y-2">
-                {formData.cv_url && (
+                {cvPreview && (
                   <a
-                    href={formData.cv_url}
+                    href={cvPreview}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-3 py-2 bg-green-900/20 border border-green-800/30 rounded-lg text-sm text-green-400 hover:text-green-300 transition w-fit"

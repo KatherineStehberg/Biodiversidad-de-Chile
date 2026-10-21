@@ -30,16 +30,14 @@ const plans: Plan[] = [
     cta: 'Empezar Ahora',
     icon: 'seed',
     features: [
-      { label: 'Acceso a mapas de distribución básicos', available: true },
-      { label: 'Boletín mensual de descubrimientos', available: true },
-      { label: 'Acceso a la comunidad pública', available: false },
-      { label: 'Sin acceso a datos crudos', available: false },
+      { label: 'Explorar publicaciones públicas de la comunidad', available: true },
+      { label: 'Crear un perfil y enviar publicaciones a moderación', available: true },
     ],
   },
   {
     id: 'brote',
     title: 'Brote',
-    subtitle: 'Herramientas avanzadas para colaboradores activos.',
+    subtitle: 'Contacto con la comunidad y apoyo a la plataforma.',
     price: `$${MEMBERSHIP_PLANS.brote.price.toLocaleString('es-CL')}`,
     period: '/mes',
     cta: 'Seleccionar Brote',
@@ -47,10 +45,8 @@ const plans: Plan[] = [
     icon: 'sprout',
     features: [
       { label: 'Todo lo incluido en Semilla', available: true },
-      { label: 'Descarga de datos avanzados (CSV/JSON)', available: true },
-      { label: 'Navegación sin publicidad', available: true },
-      { label: 'Insignia de colaborador verificada', available: true },
-      { label: 'Soporte técnico prioritario', available: true },
+      { label: 'Consultar contactos de ofertas y consultores aprobados', available: true },
+      { label: 'Acceso por un mes, con renovación manual', available: true },
     ],
   },
   {
@@ -62,11 +58,9 @@ const plans: Plan[] = [
     cta: 'Contribuir',
     icon: 'forest',
     features: [
-      { label: 'Acceso completo a API REST', available: true },
-      { label: 'Reportes de impacto exclusivos', available: true },
-      { label: 'Contacto directo con investigadores', available: true },
-      { label: 'Menciones en publicaciones anuales', available: true },
-      { label: 'Licencia para uso comercial de datos', available: true },
+      { label: 'Los mismos beneficios de acceso de Brote', available: true },
+      { label: 'Un aporte mayor para apoyar la plataforma', available: true },
+      { label: 'Acceso por un mes, con renovación manual', available: true },
     ],
   },
 ]

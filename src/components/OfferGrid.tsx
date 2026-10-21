@@ -35,7 +35,7 @@ export default function OfferGrid({ items }: { items?: OfferItem[] }) {
     }
   ];
 
-  const offers = items && items.length ? items : sample;
+  const offers = items ?? (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true' ? sample : []);
 
   const [selected, setSelected] = useState<string | null>(null);
   const selectedOffer = offers.find(c => c.id === selected) || null;

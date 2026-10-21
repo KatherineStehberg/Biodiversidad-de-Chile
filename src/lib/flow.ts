@@ -9,7 +9,11 @@ export function paymentConfig() {
   if (!apiKey || !secretKey || !site || !['production', 'sandbox'].includes(environment || '')) {
     throw new Error('Configuración de pagos incompleta')
   }
-  const origin = new URL(site).origin
+  const siteUrl = new URL(site)
+  if (siteUrl.username || siteUrl.password || siteUrl.pathname !== '/' || siteUrl.search || siteUrl.hash) {
+    throw new Error('La URL del portal debe ser un origen sin rutas')
+  }
+  const origin = siteUrl.origin
   if (!origin.startsWith('https://')) throw new Error('Los pagos requieren HTTPS')
   if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') throw new Error('Pagos no disponibles en modo demo')
   return { apiKey, secretKey, origin,

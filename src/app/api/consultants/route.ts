@@ -35,8 +35,8 @@ export async function GET() {
   try {
     const supabase = await dbConnect()
     const { data, error } = await supabase
-      .from('consultores')
-      .select(PUBLIC_CONSULTANT_FIELDS)
+      .from('consultant_directory')
+      .select('id,especialidad,experiencia,verificado,isApproved,created_at,usuarios')
       .eq('isApproved', true)
       .order('created_at', { ascending: false })
 
@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
 
     const existingRes = await supabase.from('consultores').select('id').eq('usuario_id', userId).single()
     const existing = !existingRes.error ? existingRes.data : null
-    const base = process.env.NEXTAUTH_URL || ''
-    const secretParam = process.env.MODERATION_SECRET ? `&secret=${encodeURIComponent(process.env.MODERATION_SECRET)}` : ''
+    const base = process.env.NEXT_PUBLIC_SITE_URL || ''
+    const secretParam = process.env.MODERATION_SECRET ? `#secret=${encodeURIComponent(process.env.MODERATION_SECRET)}` : ''
 
     if (existing) {
       const updateRes = await supabase
@@ -78,9 +78,8 @@ export async function POST(request: NextRequest) {
         .select(PUBLIC_CONSULTANT_FIELDS)
         .single()
       if (updateRes.error) return NextResponse.json({ error: 'Datos inválidos', details: updateRes.error.message }, { status: 400 })
-      await supabase.from('usuarios').update({ rol: 'consultant' }).eq('id', userId)
 
-      const approveUrl = `${base}/api/moderation/approve?type=consultant&id=${existing.id}${secretParam}`
+      const approveUrl = `${base}/moderation?type=consultant&id=${existing.id}${secretParam}`
       await sendAdminNotification({ subject: `Perfil de consultor a revisar: ${userId}`, text: `Revisar: ${approveUrl}` })
       try {
         let authorEmail: string | undefined = (token as UserToken).email
@@ -104,9 +103,8 @@ export async function POST(request: NextRequest) {
       .single()
     if (insertRes.error) return NextResponse.json({ error: 'Datos inválidos', details: insertRes.error.message }, { status: 400 })
     const consultant = insertRes.data
-    await supabase.from('usuarios').update({ rol: 'consultant' }).eq('id', userId)
 
-    const approveUrl = `${base}/api/moderation/approve?type=consultant&id=${consultant.id}${secretParam}`
+    const approveUrl = `${base}/moderation?type=consultant&id=${consultant.id}${secretParam}`
     await sendAdminNotification({ subject: 'Nuevo perfil de consultor a revisar', text: `Revisar: ${approveUrl}` })
     try {
       let authorEmail: string | undefined = (token as UserToken).email

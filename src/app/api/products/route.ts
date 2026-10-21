@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const base = process.env.NEXTAUTH_URL || ''
-    const secretParam = process.env.MODERATION_SECRET ? `&secret=${encodeURIComponent(process.env.MODERATION_SECRET)}` : ''
-    const approveUrl = `${base}/api/moderation/approve?type=product&id=${product.id}${secretParam}`
+    const base = process.env.NEXT_PUBLIC_SITE_URL || ''
+    const secretParam = process.env.MODERATION_SECRET ? `#secret=${encodeURIComponent(process.env.MODERATION_SECRET)}` : ''
+    const approveUrl = `${base}/moderation?type=product&id=${product.id}${secretParam}`
     await sendAdminNotification({ subject: `Nuevo producto a revisar: ${product.title}`, text: `Revisar: ${approveUrl}` })
 
     if (token.email) {

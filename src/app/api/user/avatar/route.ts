@@ -21,9 +21,11 @@ export async function POST(req: NextRequest) {
 
     // 1. Subir archivo a Storage (bucket 'avatars')
     // Nombre de archivo único: userId + timestamp
-    const fileExt = file.name.split('.').pop()
+    const extensions: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+    const fileExt = extensions[file.type]
+    if (!fileExt || file.size > 5 * 1024 * 1024) return NextResponse.json({ error: 'Usa JPG, PNG o WebP de hasta 5 MB' }, { status: 400 })
     const fileName = `${token.sub}-${Date.now()}.${fileExt}`
-    const filePath = `${fileName}`
+    const filePath = `${token.sub}/${fileName}`
 
     // Convertir File a ArrayBuffer para subirlo
     const fileBuffer = await file.arrayBuffer()
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
       .from('avatars')
       .upload(filePath, fileBuffer, {
         contentType: file.type,
-        upsert: true
+        upsert: false
       })
 
     if (uploadError) {

@@ -23,11 +23,11 @@ async function getProducts(searchParams: Awaited<MarketplacePageProps['searchPar
 
     const skip = (page - 1) * limit
 
-    const baseQuery = supabase.from('products').select('*').order('created_at', { ascending: false })
+    const baseQuery = supabase.from('products').select('id,title,description,price,category,images,seller_id,country,city,is_approved,created_at').eq('is_approved', true).order('created_at', { ascending: false })
     const from = skip
     const to = skip + limit - 1
     const pageRes = await baseQuery.range(from, to)
-    const countRes = await supabase.from('products').select('id', { count: 'exact', head: true })
+    const countRes = await supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_approved', true)
     const productsData = pageRes.data || []
     const totalProducts = countRes.count || 0
     const totalPages = Math.ceil(totalProducts / limit)
@@ -55,7 +55,7 @@ async function getProducts(searchParams: Awaited<MarketplacePageProps['searchPar
     const sellerIds = Array.from(new Set(productsData.map((p: RawProduct) => (p as RawProduct).seller_id).filter(Boolean)))
     const sellersMap: Record<string, RawUser> = {}
     if (sellerIds.length > 0) {
-      const sellersRes = await supabase.from('usuarios').select('id,name,avatar').in('id', sellerIds)
+      const sellersRes = await supabase.from('public_profiles').select('id,name,avatar').in('id', sellerIds)
       const sellers = (sellersRes.data || []) as RawUser[]
       for (const s of sellers) sellersMap[String(s.id)] = s
     }

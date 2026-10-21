@@ -13,7 +13,7 @@ CREATE INDEX IF NOT EXISTS subscriptions_user_expiry
 
 -- El navegador sólo puede leer sus propias órdenes. Toda escritura pasa por servidor.
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.subscriptions FROM anon, authenticated;
+REVOKE ALL ON public.subscriptions FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.subscriptions TO authenticated;
 GRANT ALL ON public.subscriptions TO service_role;
 -- Eliminar todas las políticas anteriores de esta tabla para evitar lecturas amplias.
@@ -34,7 +34,8 @@ DECLARE
 BEGIN
   SELECT * INTO payment FROM public.subscriptions WHERE id = order_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Unknown order'; END IF;
-  IF payment.price <> paid_amount OR payment.currency <> paid_currency THEN
+  IF paid_amount IS NULL OR paid_currency IS NULL OR flow_order IS NULL OR flow_order = ''
+     OR payment.price IS DISTINCT FROM paid_amount OR payment.currency IS DISTINCT FROM paid_currency THEN
     RAISE EXCEPTION 'Payment mismatch';
   END IF;
   IF payment."providerId" IS NOT NULL AND payment."providerId" <> flow_order THEN

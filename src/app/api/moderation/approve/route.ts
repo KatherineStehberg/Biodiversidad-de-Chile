@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import dbConnect from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendAuthorNotification } from '@/lib/email'
 
 interface AuthorUser {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (!type || !id) return NextResponse.json({ error: 'Missing params' }, { status: 400 })
 
-    const supabase = await dbConnect()
+    const supabase = supabaseAdmin()
 
     if (!['product', 'offer', 'consultant'].includes(type)) {
       return NextResponse.json({ error: 'Unknown type' }, { status: 400 })
@@ -32,16 +32,16 @@ export async function POST(request: NextRequest) {
       if (update.error) return NextResponse.json({ error: 'Server error' }, { status: 500 })
       authorId = update.data?.author ? String(update.data.author) : null
     } else if (type === 'consultant') {
-      const update = await supabase.from('consultants').update({ isApproved: true, isActive: true }).eq('id', id).select('user').single()
+      const update = await supabase.from('consultores').update({ isApproved: true }).eq('id', id).select('usuario_id').single()
       if (update.error) return NextResponse.json({ error: 'Server error' }, { status: 500 })
-      authorId = update.data?.user ? String(update.data.user) : null
+      authorId = update.data?.usuario_id ? String(update.data.usuario_id) : null
     }
 
     // notify author if possible
     let authorEmail: string | null = null
     if (authorId) {
       if (type === 'product' || type === 'offer' || type === 'consultant') {
-        const user = await supabase.from('users').select('email').eq('id', String(authorId)).single()
+        const user = await supabase.from('usuarios').select('email').eq('id', String(authorId)).single()
         const userData = user.data as AuthorUser
         authorEmail = userData?.email || null
       }

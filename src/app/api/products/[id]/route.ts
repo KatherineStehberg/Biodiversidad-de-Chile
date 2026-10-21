@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
+import { getAuthUser, getBearerToken } from '@/lib/auth-helper'
 
 interface Product {
   id: string
@@ -19,7 +20,6 @@ interface Product {
 interface Seller {
   id: string
   name: string
-  email: string
   avatar: string
   bio?: string
 }
@@ -32,7 +32,7 @@ export async function GET(
   try {
     const { id } = await params
     const supabase = await dbConnect()
-    const res = await supabase.from('products').select('*').eq('id', id).single()
+    const res = await supabase.from('products').select('id,title,description,price,category,images,seller_id,country,city,is_approved,created_at').eq('is_approved', true).eq('id', id).single()
     if (res.error && res.error.code !== 'PGRST116') {
       return NextResponse.json({ error: 'Error de base de datos' }, { status: 500 })
     }
@@ -47,7 +47,7 @@ export async function GET(
 
     let seller: Seller | null = null
     if (product && product.seller_id) {
-      const sellerRes = await supabase.from('users').select('id,name,email,avatar,bio').eq('id', product.seller_id).single()
+      const sellerRes = await supabase.from('public_profiles').select('id,name,avatar').eq('id', product.seller_id).single()
       if (!sellerRes.error && sellerRes.data) seller = sellerRes.data as Seller
     }
 
@@ -70,15 +70,19 @@ export async function PUT(
   try {
     const { id } = await params
     const supabase = await dbConnect()
-    const body = await request.json()
-    const updateRes = await supabase.from('products').update(body).eq('id', id).select('*').single()
+    const user = await getAuthUser(request)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const db = await dbConnect(getBearerToken(request))
+    const source = await request.json()
+    const body = Object.fromEntries(['title','description','price','category','images','country','city'].filter(key => key in source).map(key => [key, source[key]]))
+    const updateRes = await db.from('products').update({ ...body, is_approved: false }).eq('seller_id', user.sub).eq('id', id).select('id,title,description,price,category,images,seller_id,country,city,is_approved,created_at').single()
     if (updateRes.error) {
       return NextResponse.json({ error: 'Datos de producto inválidos', details: updateRes.error.message }, { status: 400 })
     }
     const product = updateRes.data as Product | null
     let seller: Seller | null = null
     if (product && product.seller_id) {
-      const sellerRes = await supabase.from('users').select('id,name,email,avatar').eq('id', product.seller_id).single()
+      const sellerRes = await supabase.from('public_profiles').select('id,name,avatar').eq('id', product.seller_id).single()
       if (!sellerRes.error && sellerRes.data) seller = sellerRes.data as Seller
     }
 
@@ -108,8 +112,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await dbConnect()
-    const delRes = await supabase.from('products').delete().eq('id', id)
+    const user = await getAuthUser(request)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const db = await dbConnect(getBearerToken(request))
+    const delRes = await db.from('products').delete({ count: 'exact' }).eq('seller_id', user.sub).eq('id', id)
     if (delRes.error) {
       return NextResponse.json({ error: 'Error de base de datos' }, { status: 500 })
     }

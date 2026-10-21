@@ -6,7 +6,9 @@ export async function confirmFlowPayment(token: string) {
   const payment = await flowRequest<{
     commerceOrder: string; flowOrder: number; status: number; amount: number; currency: string
   }>('payment/getStatus', { token }, 'GET')
-  if (!payment.commerceOrder || !payment.flowOrder || ![1, 2, 3, 4].includes(payment.status)) {
+  if (!payment.commerceOrder || !Number.isSafeInteger(payment.flowOrder) || payment.flowOrder <= 0 ||
+      !Number.isFinite(payment.amount) || payment.amount <= 0 || payment.currency !== 'CLP' ||
+      ![1, 2, 3, 4].includes(payment.status)) {
     throw new Error('Estado de pago inválido')
   }
   // La función SQL valida orden/monto/moneda, bloquea la fila y activa una sola vez.
