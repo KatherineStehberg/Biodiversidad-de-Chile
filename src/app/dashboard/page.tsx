@@ -29,7 +29,7 @@ export default function DashboardPage() {
 
         const { data } = await supabase
           .from('usuarios')
-          .select('name,tipo_usuario,imagen_perfil,especialidad')
+          .select('name,tipo_usuario,imagen_perfil')
           .eq('id', session.user.id)
           .single()
 

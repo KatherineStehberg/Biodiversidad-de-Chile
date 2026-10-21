@@ -1,6 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { MEMBERSHIP_PLANS } from '@/lib/membership-plans'
 import { HiCheck, HiX } from 'react-icons/hi'
 import { LuSprout, LuTrees } from 'react-icons/lu'
 
@@ -37,7 +40,7 @@ const plans: Plan[] = [
     id: 'brote',
     title: 'Brote',
     subtitle: 'Herramientas avanzadas para colaboradores activos.',
-    price: '$5.700',
+    price: `$${MEMBERSHIP_PLANS.brote.price.toLocaleString('es-CL')}`,
     period: '/mes',
     cta: 'Seleccionar Brote',
     highlight: true,
@@ -54,7 +57,7 @@ const plans: Plan[] = [
     id: 'bosque',
     title: 'Bosque',
     subtitle: 'Para organizaciones y patrocinadores serios.',
-    price: '$10.000',
+    price: `$${MEMBERSHIP_PLANS.bosque.price.toLocaleString('es-CL')}`,
     period: '/mes',
     cta: 'Contribuir',
     icon: 'forest',
@@ -74,6 +77,26 @@ function PlanIcon({ type }: { type?: 'seed' | 'sprout' | 'forest' }) {
 }
 
 function Membership() {
+  const [pending, setPending] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  async function checkout(planId: string) {
+    if (pending) return
+    setPending(planId)
+    setError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { window.location.assign('/login'); return }
+      const response = await fetch('/api/subscriptions/create', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ planId })
+      })
+      const result = await response.json()
+      if (!response.ok || !result.checkoutUrl) throw new Error(result.error || 'No se pudo iniciar el pago')
+      window.location.assign(result.checkoutUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar el pago')
+    } finally { setPending(null) }
+  }
   return (
     <section className="py-20 bg-neutral-950">
       <div className="max-w-5xl mx-auto px-4">
@@ -93,6 +116,8 @@ function Membership() {
           </p>
         </div>
 
+        <p className="text-center text-gray-400 mb-6">Planes pagados en CLP por un mes. Renovación manual, sin cobro automático.</p>
+        {error && <p role="alert" className="text-center text-amber-300 mb-6">{error}</p>}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {plans.map(p => (
             <div
@@ -124,16 +149,14 @@ function Membership() {
                 <span className="text-sm text-gray-500">{p.period}</span>
               </div>
 
-              <Link
-                href="/membresias"
-                className={`block w-full text-center rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
-                  p.highlight
-                    ? 'bg-green-600 hover:bg-green-500 text-white'
-                    : 'bg-neutral-800 hover:bg-neutral-700 text-gray-200 border border-neutral-700'
-                }`}
-              >
-                {p.cta}
-              </Link>
+              {p.id === 'semilla' ? (
+                <Link href="/registro" className="block w-full text-center rounded-xl px-4 py-3 bg-neutral-800 text-white">{p.cta}</Link>
+              ) : (
+                <button type="button" onClick={() => checkout(p.id)} disabled={pending !== null}
+                  className="block w-full text-center rounded-xl px-4 py-3 bg-green-600 hover:bg-green-500 text-white disabled:opacity-50">
+                  {pending === p.id ? 'Conectando con Flow…' : p.cta}
+                </button>
+              )}
 
               <ul className="mt-6 space-y-3">
                 {p.features.map((f, i) => (

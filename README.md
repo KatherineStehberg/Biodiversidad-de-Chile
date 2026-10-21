@@ -149,3 +149,7 @@ Rama principal:
 ```text
 main
 ```
+
+## Pagos y membresías
+
+Consultar [preparación de pagos y acceso](docs/RELEASE_MEMBERSHIPS.md). Requiere variables privadas de Flow/Supabase y revisión/aplicación de la migración antes de habilitar pagos. Las membresías pagadas duran un mes y se renuevan manualmente.

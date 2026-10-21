@@ -49,7 +49,7 @@ export function useGamification(): GamificationState {
         // Datos del usuario
         const { data: userData } = await supabase
           .from('usuarios')
-          .select('name,tipo_usuario,imagen_perfil,especialidad,membresia_activa')
+          .select('name,tipo_usuario,imagen_perfil')
           .eq('id', userId)
           .single()
 
@@ -84,7 +84,12 @@ export function useGamification(): GamificationState {
           ? [...COMMON, ...CONSULTANT_ONLY]
           : [...COMMON, ...USER_ONLY]
 
-        const achievements = evaluateAchievements(defs, userData, consultorData, counts)
+        const response = await fetch('/api/subscriptions/me', {
+          headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store'
+        })
+        const membership = response.ok ? await response.json() : null
+        const achievements = evaluateAchievements(defs,
+          { ...userData, membresia_activa: !!membership?.subscription }, consultorData, counts)
         const points = achievements.filter(a => a.completed).reduce((s, a) => s + a.points, 0)
 
         setState({
