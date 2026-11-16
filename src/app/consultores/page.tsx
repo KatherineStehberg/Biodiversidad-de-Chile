@@ -3,15 +3,14 @@ import PublicarOfertaSection from '@/components/PublicarOfertaSection';
 import OfferGrid from '@/components/OfferGrid'
 import { supabase } from '@/lib/supabase'
 
-type UsuarioRef = { name: string; imagen_perfil: string | null }
-
 interface ConsultorRow {
   id: string
   especialidad: string
   experiencia: string
   verificado: boolean
   created_at: string
-  usuarios: UsuarioRef | UsuarioRef[]
+  name: string | null
+  imagen_perfil: string | null
 }
 
 interface Offer {
@@ -23,7 +22,6 @@ interface Offer {
   salaryMax?: number
   modality: string
   employmentType: string
-  contact: string
   tags: string[]
   isApproved: boolean
   created_at: string
@@ -36,17 +34,14 @@ export default async function ConsultoresPage() {
 
   try {
     const { data: consData, error: consError } = await supabase
-      .from('consultores')
+      .from('public_consultants')
       .select(`
         id,
         especialidad,
         experiencia,
         verificado,
         created_at,
-        usuarios!inner (
-          name,
-          imagen_perfil
-        )
+        name, imagen_perfil
       `)
       .eq('isApproved', true)
       .order('created_at', { ascending: false })
@@ -55,8 +50,8 @@ export default async function ConsultoresPage() {
     }
 
     const { data: offData, error: offError } = await supabase
-      .from('offers')
-      .select('id,title,description,location,salaryMin,salaryMax,modality,employmentType,contact,tags,isApproved,created_at')
+      .from('public_offers')
+      .select('id,title,description,location,salaryMin,salaryMax,modality,employmentType,tags,isApproved,created_at')
       .eq('isApproved', true)
       .order('created_at', { ascending: false })
       .limit(12)
@@ -68,13 +63,12 @@ export default async function ConsultoresPage() {
   }
 
   const serialized = consultoresRaw.map((c) => {
-    const usuario = Array.isArray(c.usuarios) ? c.usuarios[0] : c.usuarios
     return {
       id: String(c.id),
-      name: usuario?.name || '',
+      name: c.name || '',
       specialty: c.especialidad || '',
       bio: c.experiencia || '',
-      image: usuario?.imagen_perfil || undefined
+      image: c.imagen_perfil || undefined
     }
   })
 
@@ -87,7 +81,6 @@ export default async function ConsultoresPage() {
     salaryMax: o.salaryMax,
     modality: o.modality,
     employmentType: o.employmentType,
-    contact: o.contact,
     tags: o.tags || []
   }))
 

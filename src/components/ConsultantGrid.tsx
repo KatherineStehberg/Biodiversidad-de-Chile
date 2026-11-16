@@ -6,13 +6,12 @@ import ConsultantSidePanel from './ConsultantSidePanel';
 import { supabase } from '@/lib/supabase';
 import type { ConsultantSummary } from '@/types/consultant';
 
-type UsuarioRef = { imagen_perfil: string | null; name: string };
-
 type ConsultorRow = {
   id: string | number;
   especialidad?: string | null;
   experiencia?: string | null;
-  usuarios: UsuarioRef | UsuarioRef[];
+  name: string | null
+  imagen_perfil: string | null;
 };
 
 export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] }) {
@@ -23,17 +22,13 @@ export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] 
     async function fetchConsultants() {
       try {
         const { data, error } = await supabase
-          .from('consultores')
+          .from('public_consultants')
           .select(`
             id,
-            usuario_id,
             especialidad,
             experiencia,
             verificado,
-            usuarios!inner (
-              imagen_perfil,
-              name
-            )
+            imagen_perfil, name
           `)
           .eq('isApproved', true);
 
@@ -42,14 +37,10 @@ export default function ConsultantGrid({ items }: { items?: ConsultantSummary[] 
           setConsultants(items || []);
         } else {
           const transformedConsultants = data.map((consultant: ConsultorRow) => {
-            const usuario = Array.isArray(consultant.usuarios)
-              ? consultant.usuarios[0]
-              : consultant.usuarios;
-
             return {
               id: consultant.id.toString(),
-              image: usuario?.imagen_perfil || undefined,
-              name: usuario?.name || '',
+              image: consultant.imagen_perfil || undefined,
+              name: consultant.name || '',
               specialty: consultant.especialidad || '',
               email: '',
               bio: consultant.experiencia || '',

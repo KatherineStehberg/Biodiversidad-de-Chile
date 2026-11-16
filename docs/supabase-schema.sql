@@ -2,7 +2,7 @@
 -- BIODIVERSIDAD.CL — Esquema completo para Supabase
 -- Proyecto: nextjs-bio2-main
 -- Fecha: 2026-06-22
--- Pegar en: Dashboard → SQL Editor → New Query → Run
+-- Referencia histórica. Para un proyecto nuevo, usar supabase/migrations y docs/supabase-portal.md.
 -- ============================================================
 
 

@@ -18,4 +18,13 @@ export async function dbConnect(accessToken?: string | null) {
   return supabase
 }
 
+export function dbConnectAdmin() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
+
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
+
 export default dbConnect

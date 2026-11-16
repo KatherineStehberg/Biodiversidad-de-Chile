@@ -29,10 +29,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'SMTP not configured on server. Cannot publish offers.' }, { status: 500 })
     }
 
-    const body = await request.json()
+    const {
+      title, description, company, requirements, currency, location, salaryMin,
+      salaryMax, modality, employmentType, contact, tags
+    } = await request.json()
     const insertRes = await supabase
       .from('offers')
-      .insert({ ...body, author: userId, isApproved: false })
+      .insert({
+        title, description, company, requirements, currency, location, salaryMin,
+        salaryMax, modality, employmentType, contact, tags, author: userId
+      })
       .select('*')
       .single()
     if (insertRes.error) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import ContactGate from '@/components/ui/ContactGate'
 
 interface Offer {
@@ -23,6 +24,23 @@ interface Props {
 
 export default function OfferSidePanel({ offer, onClose }: Props) {
   const [visible, setVisible] = useState(false)
+  const [contactResult, setContactResult] = useState<{ id: string; value: string | null } | null>(null)
+  const offerId = offer?.id
+  const contact = offer?.contact ?? (contactResult && contactResult.id === offerId ? contactResult.value : null)
+
+  useEffect(() => {
+    if (!offerId || process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') return
+    const id = offerId
+    let active = true
+    async function loadContact() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const { data } = await supabase.rpc('offer_contact', { offer_id: id })
+      if (active) setContactResult({ id, value: typeof data === 'string' ? data : null })
+    }
+    void loadContact()
+    return () => { active = false }
+  }, [offerId])
   const panelRef = useRef<HTMLDivElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
@@ -148,10 +166,10 @@ export default function OfferSidePanel({ offer, onClose }: Props) {
 
           {/* Contacto con gate de membresía */}
           <ContactGate>
-            {offer.contact ? (
-              offer.contact.includes('@') ? (
+            {contact ? (
+              contact.includes('@') ? (
                 <a
-                  href={`mailto:${offer.contact}?subject=Postulación: ${encodeURIComponent(offer.title)}`}
+                  href={`mailto:${contact}?subject=Postulación: ${encodeURIComponent(offer.title)}`}
                   className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"
                 >
                   ✉️ Postular por correo
@@ -159,7 +177,7 @@ export default function OfferSidePanel({ offer, onClose }: Props) {
               ) : (
                 <div className="bg-neutral-800 rounded-xl p-4 text-sm">
                   <span className="block text-xs text-gray-400 mb-1">Contacto directo:</span>
-                  <span className="text-white font-medium">{offer.contact}</span>
+                  <span className="text-white font-medium">{contact}</span>
                 </div>
               )
             ) : (

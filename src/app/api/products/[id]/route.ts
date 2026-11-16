@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
+import { getAuthUser, getBearerToken } from '@/lib/auth-helper'
+import { sendAdminNotification } from '@/lib/email'
 
 interface Product {
   id: string
@@ -19,7 +21,6 @@ interface Product {
 interface Seller {
   id: string
   name: string
-  email: string
   avatar: string
   bio?: string
 }
@@ -47,7 +48,7 @@ export async function GET(
 
     let seller: Seller | null = null
     if (product && product.seller_id) {
-      const sellerRes = await supabase.from('users').select('id,name,email,avatar,bio').eq('id', product.seller_id).single()
+      const sellerRes = await supabase.from('public_profiles').select('id,name,avatar,bio').eq('id', product.seller_id).single()
       if (!sellerRes.error && sellerRes.data) seller = sellerRes.data as Seller
     }
 
@@ -69,16 +70,18 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const supabase = await dbConnect()
-    const body = await request.json()
-    const updateRes = await supabase.from('products').update(body).eq('id', id).select('*').single()
+    const user = await getAuthUser(request)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = await dbConnect(getBearerToken(request))
+    const { title, description, price, category, images, country, city } = await request.json()
+    const updateRes = await supabase.from('products').update({ title, description, price, category, images, country, city }).eq('id', id).select('*').single()
     if (updateRes.error) {
       return NextResponse.json({ error: 'Datos de producto inválidos', details: updateRes.error.message }, { status: 400 })
     }
     const product = updateRes.data as Product | null
     let seller: Seller | null = null
     if (product && product.seller_id) {
-      const sellerRes = await supabase.from('users').select('id,name,email,avatar').eq('id', product.seller_id).single()
+      const sellerRes = await supabase.from('public_profiles').select('id,name,avatar').eq('id', product.seller_id).single()
       if (!sellerRes.error && sellerRes.data) seller = sellerRes.data as Seller
     }
 
@@ -88,6 +91,12 @@ export async function PUT(
         { status: 404 }
       )
     }
+
+    const base = process.env.NEXTAUTH_URL || ''
+    const secret = process.env.MODERATION_SECRET
+    const secretParam = secret ? `&secret=${encodeURIComponent(secret)}` : ''
+    const approveUrl = `${base}/api/moderation/approve?type=product&id=${product.id}${secretParam}`
+    await sendAdminNotification({ subject: `Producto editado a revisar: ${product.title}`, text: `Revisar: ${approveUrl}` })
 
     return NextResponse.json({ ...product, seller })
 
@@ -108,8 +117,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const supabase = await dbConnect()
-    const delRes = await supabase.from('products').delete().eq('id', id)
+    const user = await getAuthUser(request)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = await dbConnect(getBearerToken(request))
+    const delRes = await supabase.from('products').delete({ count: 'exact' }).eq('id', id)
     if (delRes.error) {
       return NextResponse.json({ error: 'Error de base de datos' }, { status: 500 })
     }
