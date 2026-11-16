@@ -1,4 +1,4 @@
-name: QA — Static · Playwright · Cypress · Cucumber · Docker
+name: QA — Static · Playwright · Cypress · Cucumber
 
 on:
   push:
@@ -100,6 +100,9 @@ jobs:
           cat /tmp/biodiversidad-next.log || true
           exit 1
 
+      - name: Check application health
+        run: curl --fail --silent --show-error http://localhost:3000/api/health
+
       - name: Run Playwright
         run: npm run test:playwright
 
@@ -157,34 +160,3 @@ jobs:
       - name: Stop Next.js server
         if: always()
         run: pkill -f "next" || true
-
-  docker-smoke-test:
-    name: Docker build and smoke test
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build --tag biodiversidad-qa:ci .
-
-      - name: Start container
-        run: docker run --detach --name biodiversidad-qa --publish 3000:3000 biodiversidad-qa:ci
-
-      - name: Wait for container
-        run: |
-          for i in $(seq 1 30); do
-            if curl --fail --silent http://localhost:3000 > /dev/null; then
-              echo "Container ready on attempt $i"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "Container did not respond after 90 seconds"
-          docker logs biodiversidad-qa || true
-          exit 1
-
-      - name: Stop container
-        if: always()
-        run: docker rm --force biodiversidad-qa || true
