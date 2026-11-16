@@ -10,7 +10,6 @@ interface UserData {
   name: string
   tipo_usuario: string
   imagen_perfil?: string
-  especialidad?: string
 }
 
 export default function DashboardPage() {
@@ -23,13 +22,13 @@ export default function DashboardPage() {
     async function load() {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session) { router.push('/login'); return }
+        if (!session) { router.replace('/login'); return }
 
         setEmail(session.user.email || '')
 
         const { data } = await supabase
           .from('usuarios')
-          .select('name,tipo_usuario,imagen_perfil,especialidad')
+          .select('name,tipo_usuario,imagen_perfil')
           .eq('id', session.user.id)
           .single()
 
@@ -43,10 +42,9 @@ export default function DashboardPage() {
             imagen_perfil: meta.avatar_url || meta.picture
           })
         }
-      } catch {
-        router.push('/login')
-      } finally {
         setLoading(false)
+      } catch {
+        router.replace('/login')
       }
     }
     load()
@@ -103,9 +101,6 @@ export default function DashboardPage() {
           }`}>
             {isConsultant ? '🌿 Consultor ambiental' : '👤 Usuario / Reclutador'}
           </span>
-          {isConsultant && userData?.especialidad && (
-            <span className="ml-2 text-sm text-gray-500">· {userData.especialidad}</span>
-          )}
         </div>
 
         {isConsultant ? <ConsultantDashboard /> : <UserDashboard />}
