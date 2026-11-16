@@ -7,7 +7,7 @@ Plataforma web para la gestión y visualización de información relacionada con
 El repositorio corresponde a la aplicación **Next.js** de Biodiversidad de Chile. El despliegue de producción **no utiliza Docker**.
 
 Portal:
-- https://consultores.biodiversidad.cl/
+- https://portal.biodiversidad.cl/
 
 ## Stack tecnológico
 
