@@ -3,6 +3,10 @@ import { getErrorMessage } from '@/lib/utils'
 import dbConnect from '@/lib/db'
 
 export async function POST() {
+  if (process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_USE_MOCK_DATA !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   try {
     const sb = await dbConnect()
 

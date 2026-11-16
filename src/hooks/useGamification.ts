@@ -49,7 +49,7 @@ export function useGamification(): GamificationState {
         // Datos del usuario
         const { data: userData } = await supabase
           .from('usuarios')
-          .select('name,tipo_usuario,imagen_perfil,especialidad,membresia_activa')
+          .select('name,tipo_usuario,imagen_perfil,membresia_activa')
           .eq('id', userId)
           .single()
 
@@ -68,7 +68,7 @@ export function useGamification(): GamificationState {
 
         // Conteo de actividad
         const [offersRes, resourcesRes, productsRes] = await Promise.all([
-          supabase.from('offers').select('id', { count: 'exact', head: true }).eq('userId', userId),
+          supabase.from('offers').select('id', { count: 'exact', head: true }).eq('author', userId),
           supabase.from('resources').select('id', { count: 'exact', head: true }).eq('author_id', userId),
           supabase.from('products').select('id', { count: 'exact', head: true }).eq('seller_id', userId),
         ])

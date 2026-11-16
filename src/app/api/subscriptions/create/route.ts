@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getErrorMessage } from '@/lib/utils'
-import dbConnect from '@/lib/db'
+import { dbConnectAdmin } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth-helper'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await dbConnect()
     const token = await getAuthUser(request)
     if (!token || !token.sub) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
     const { planId } = body
-    if (!planId) return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
+    if (typeof planId !== 'string' || !planId) return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
 
     // Mapear planes locales a precio/nombre
     const PLAN_MAP: Record<string, { name: string, price: number }> = {
@@ -21,10 +20,10 @@ export async function POST(request: NextRequest) {
     }
 
     const plan = PLAN_MAP[planId]
-    if (!plan) return NextResponse.json({ error: 'Unknown planId' }, { status: 400 })
+    if (!Object.prototype.hasOwnProperty.call(PLAN_MAP, planId)) return NextResponse.json({ error: 'Unknown planId' }, { status: 400 })
 
     // Crear suscripción local pendiente
-    const insertRes = await supabase
+    const insertRes = await dbConnectAdmin()
       .from('subscriptions')
       .insert({ user: token.sub, planId, planName: plan.name, price: plan.price, currency: 'USD', status: 'pending' })
       .select('*')

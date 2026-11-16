@@ -13,6 +13,7 @@ interface AuthorUser {
 }
 
 const PUBLIC_CONSULTANT_FIELDS = 'id,especialidad,experiencia,cv_url,portfolio_url,certificaciones,verificado,isApproved,created_at'
+const PUBLIC_DIRECTORY_FIELDS = 'id,especialidad,experiencia,portfolio_url,certificaciones,verificado,isApproved,created_at'
 const WRITABLE_FIELDS = ['especialidad', 'experiencia', 'cv_url', 'portfolio_url', 'certificaciones'] as const
 
 function sanitizeConsultantBody(body: unknown) {
@@ -35,8 +36,8 @@ export async function GET() {
   try {
     const supabase = await dbConnect()
     const { data, error } = await supabase
-      .from('consultores')
-      .select(PUBLIC_CONSULTANT_FIELDS)
+      .from('public_consultants')
+      .select(PUBLIC_DIRECTORY_FIELDS)
       .eq('isApproved', true)
       .order('created_at', { ascending: false })
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (existing) {
       const updateRes = await supabase
         .from('consultores')
-        .update({ ...consultantData, isApproved: false })
+        .update(consultantData)
         .eq('id', existing.id)
         .select(PUBLIC_CONSULTANT_FIELDS)
         .single()
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     const insertRes = await supabase
       .from('consultores')
-      .insert({ ...consultantData, usuario_id: userId, isApproved: false })
+      .insert({ ...consultantData, usuario_id: userId })
       .select(PUBLIC_CONSULTANT_FIELDS)
       .single()
     if (insertRes.error) return NextResponse.json({ error: 'Datos inválidos', details: insertRes.error.message }, { status: 400 })

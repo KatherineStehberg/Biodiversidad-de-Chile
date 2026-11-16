@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const supabase = await dbConnect(accessToken)
     const insertRes = await supabase
       .from('products')
-      .insert({ ...productData, seller_id: userId, is_approved: false })
+      .insert({ ...productData, seller_id: userId })
       .select('id,title,description,price,category,images,country,city,seller_id,is_approved,created_at')
       .single()
 

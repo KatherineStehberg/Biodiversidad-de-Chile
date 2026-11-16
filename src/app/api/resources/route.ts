@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         description: description.trim(),
         link: link?.trim() || null,
-        isActive: false,
         author_id: user.sub
       })
       .select('id')

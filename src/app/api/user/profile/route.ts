@@ -33,8 +33,7 @@ export async function POST(req: NextRequest) {
       'consultant': 'consultor',
       'usuario_regular': 'usuario_regular',
       'reclutador': 'reclutador',
-      'consultor': 'consultor',
-      'admin': 'admin'
+      'consultor': 'consultor'
     }
 
     let safeRole: string | undefined = undefined
@@ -48,8 +47,10 @@ export async function POST(req: NextRequest) {
     if (name !== undefined) updates.name = clean(name)
     if (address !== undefined) updates.address = clean(address)
     if (role !== undefined) {
-      safeRole = ROLE_MAP[role] || 'usuario_regular'
-      updates.tipo_usuario = clean(safeRole)
+      safeRole = typeof role === 'string' && Object.hasOwn(ROLE_MAP, role)
+        ? ROLE_MAP[role]
+        : undefined
+      if (safeRole) updates.tipo_usuario = safeRole
     }
     if (linkedin_url !== undefined) updates.linkedin_url = clean(linkedin_url)
     if (instagram_url !== undefined) updates.instagram_url = clean(instagram_url)
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('usuarios')
-      .upsert(updates, { onConflict: 'email' })
+      .upsert(updates, { onConflict: 'id' })
       .select('id, email, name')
       .single()
 
@@ -84,8 +85,7 @@ export async function POST(req: NextRequest) {
         especialidad: especialidad || 'General',
         experiencia: experiencia || 'Perfil de consultor',
         cv_url: cv_url || '',
-        certificaciones: certificaciones || '',
-        verificado: false
+        certificaciones: certificaciones || ''
       }
       if (portfolio_url !== undefined) consultantData.portfolio_url = clean(portfolio_url)
 

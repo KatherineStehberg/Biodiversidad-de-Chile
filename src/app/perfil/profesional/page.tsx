@@ -82,6 +82,19 @@ function ProfessionalForm() {
     }
   }
 
+  async function openCV(event: React.MouseEvent<HTMLAnchorElement>) {
+    const path = formData.cv_url
+    const privatePath = path.startsWith('cvs/') ? path : path.split('/object/public/documentos/')[1]
+    if (!privatePath) return
+    event.preventDefault()
+    const { data, error } = await supabase.storage.from('documentos').createSignedUrl(privatePath, 60)
+    if (error || !data) {
+      setMessage('No se pudo abrir el CV.')
+      return
+    }
+    window.location.assign(data.signedUrl)
+  }
+
   async function handleCVUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -92,8 +105,7 @@ function ProfessionalForm() {
       const path = `cvs/${user.id}/${Date.now()}-${file.name}`
       const { error } = await supabase.storage.from('documentos').upload(path, file)
       if (error) throw error
-      const { data: { publicUrl } } = supabase.storage.from('documentos').getPublicUrl(path)
-      setFormData(prev => ({ ...prev, cv_url: publicUrl }))
+      setFormData(prev => ({ ...prev, cv_url: path }))
     } catch (err) {
       setMessage('Error al subir CV: ' + getErrorMessage(err, 'intenta de nuevo'))
     } finally {
@@ -214,7 +226,8 @@ function ProfessionalForm() {
               <div className="space-y-2">
                 {formData.cv_url && (
                   <a
-                    href={formData.cv_url}
+                    href={formData.cv_url.startsWith('cvs/') ? '#' : formData.cv_url}
+                    onClick={openCV}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-3 py-2 bg-green-900/20 border border-green-800/30 rounded-lg text-sm text-green-400 hover:text-green-300 transition w-fit"

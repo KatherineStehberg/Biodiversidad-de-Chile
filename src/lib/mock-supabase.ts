@@ -38,6 +38,16 @@ type OAuthArgs = {
 
 const TABLES: Record<string, readonly unknown[]> = {
   consultores: MOCK_CONSULTORES,
+  public_consultants: MOCK_CONSULTORES.map(consultant => ({
+    ...consultant,
+    isApproved: true,
+    name: consultant.usuarios.name,
+    imagen_perfil: consultant.usuarios.imagen_perfil,
+  })),
+  public_profiles: MOCK_USUARIOS.map(user => ({
+    id: user.id, name: user.name, avatar: user.imagen_perfil,
+  })),
+  public_offers: MOCK_OFFERS.filter(offer => offer.isApproved),
   offers: MOCK_OFFERS,
   products: MOCK_PRODUCTS,
   resources: MOCK_RESOURCES,
