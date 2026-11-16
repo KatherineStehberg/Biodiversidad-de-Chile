@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
 
-const siteUrl = "https://consultores.biodiversidad.cl";
+import { PORTAL_URL as siteUrl } from '@/lib/utils'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

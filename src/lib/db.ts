@@ -5,7 +5,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
 export async function dbConnect(accessToken?: string | null) {
-  if (accessToken) {
+  if (accessToken && process.env.NEXT_PUBLIC_USE_MOCK_DATA !== 'true') {
     return createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: {

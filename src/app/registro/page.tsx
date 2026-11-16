@@ -118,7 +118,8 @@ export default function RegistroPage() {
       setResendStatus('')
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
-        email: formData.email
+        email: formData.email,
+        options: { emailRedirectTo: `${getURL()}dashboard` }
       })
       if (resendError) throw resendError
       setResendStatus('Correo de confirmación reenviado. Revisa tu bandeja y spam.')

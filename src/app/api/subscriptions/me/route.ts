@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import dbConnect from '@/lib/db'
-import { getAuthUser } from '@/lib/auth-helper'
+import { getAuthUser, getBearerToken } from '@/lib/auth-helper'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await dbConnect()
     const token = await getAuthUser(request)
     if (!token || !token.sub) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const supabase = await dbConnect(getBearerToken(request))
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
