@@ -1,12 +1,11 @@
- 'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getErrorMessage } from '@/lib/utils'
-import { getURL } from '@/lib/utils'
+import { getErrorMessage, getURL } from '@/lib/utils'
 
 const AuthBackground = () => {
   const [currentImage, setCurrentImage] = useState(0)
@@ -90,7 +89,8 @@ export default function LoginPage() {
       setResendStatus('')
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
-        email
+        email,
+        options: { emailRedirectTo: `${getURL()}dashboard` }
       })
       if (resendError) throw resendError
       setResendStatus('Correo de confirmación reenviado. Revisa tu bandeja y spam.')
