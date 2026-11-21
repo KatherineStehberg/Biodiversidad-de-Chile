@@ -2,6 +2,37 @@
 
 Plataforma web para la gestión y visualización de información relacionada con biodiversidad, con portal de consultores y servicios asociados.
 
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)
+![QA](https://img.shields.io/badge/QA-Playwright%20%C2%B7%20Cypress%20%C2%B7%20Cucumber-45ba4b)
+
+## Resumen técnico
+
+| Aspecto | Detalle verificable en el código |
+|---|---|
+| **Tipo** | Plataforma Full Stack en producción ([portal.biodiversidad.cl](https://portal.biodiversidad.cl/)) |
+| **Frontend** | Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4 y MUI; ~20 secciones (marketplace, consultores, membresías, campañas, educación, perfil profesional, dashboard) |
+| **Backend** | Route Handlers de Next.js como API REST: productos, consultores, ofertas, suscripciones, moderación, usuarios, diagnóstico, `/api/health` |
+| **Integraciones** | Supabase (PostgreSQL, Auth, Storage), NextAuth, Nodemailer (SMTP), datos abiertos de GBIF, Open-Meteo y USGS (sismos), webhooks n8n, contenidos desde WordPress |
+| **Datos** | Esquema SQL en `docs/supabase-schema.sql`; modo de datos simulados (`NEXT_PUBLIC_USE_MOCK_DATA`) para desarrollo y CI |
+| **Calidad** | ESLint, `tsc --noEmit`, E2E con Playwright (desktop y móvil), pruebas de API y UI con Cypress (incluye casos negativos), escenarios BDD con Cucumber |
+| **CI** | GitHub Actions (`.github/workflows/qa.yml`): análisis estático + Playwright + Cypress + Cucumber en cada pull request a `main` |
+| **Tamaño** | ~13.000 líneas de TypeScript/TSX en `src/` |
+
+**Mi rol:** fundadora del proyecto y responsable de producto, arquitectura, desarrollo full stack, integración con Supabase, QA automatizado y despliegue.
+
+```mermaid
+flowchart LR
+    U[Usuarios<br/>navegador] --> N[Next.js 15<br/>App Router · React 19]
+    N --> R[Route Handlers<br/>API REST]
+    R --> SB[(Supabase<br/>PostgreSQL · Auth · Storage)]
+    R --> EXT[APIs abiertas<br/>GBIF · Open-Meteo · USGS]
+    R --> M[SMTP / n8n]
+    N --> WP[Contenidos WordPress]
+```
+
 ## Estado del proyecto
 
 El repositorio corresponde a la aplicación **Next.js** de Biodiversidad de Chile. El despliegue de producción **no utiliza Docker**.
