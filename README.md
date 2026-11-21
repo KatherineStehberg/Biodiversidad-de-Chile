@@ -12,7 +12,7 @@ Plataforma web para la gestión y visualización de información relacionada con
 
 | Aspecto | Detalle verificable en el código |
 |---|---|
-| **Tipo** | Plataforma Full Stack en producción ([portal.biodiversidad.cl](https://portal.biodiversidad.cl/)) |
+| **Tipo** | Portal web Full Stack de Biodiversidad.cl (en desarrollo activo; entorno de ensayo en [ensayo.portal.biodiversidad.cl](https://ensayo.portal.biodiversidad.cl)) |
 | **Frontend** | Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4 y MUI; ~20 secciones (marketplace, consultores, membresías, campañas, educación, perfil profesional, dashboard) |
 | **Backend** | Route Handlers de Next.js como API REST: productos, consultores, ofertas, suscripciones, moderación, usuarios, diagnóstico, `/api/health` |
 | **Integraciones** | Supabase (PostgreSQL, Auth, Storage), NextAuth, Nodemailer (SMTP), datos abiertos de GBIF, Open-Meteo y USGS (sismos), webhooks n8n, contenidos desde WordPress |
